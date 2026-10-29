@@ -1,0 +1,114 @@
+"""
+Unit tests for AuthDrift Contextual Correlation Engine (Objective 3).
+"""
+
+from datetime import datetime, timezone, timedelta
+import pytest
+from backend.models.event import AuthenticationEvent
+from backend.correlation.context_analyzer import ContextAnalyzer
+
+
+def make_context_event(
+    user_id: str = "user-101",
+    method: str = "password",
+    outcome: str = "SUCCESS",
+    device_id: str = None,
+    location: str = None,
+    authenticator_id: str = None,
+    event_type: str = "LOGIN",
+    delta_sec: int = 0
+) -> AuthenticationEvent:
+    base = datetime(2026, 10, 30, 10, 0, 0, tzinfo=timezone.utc)
+    return AuthenticationEvent(
+        event_id=f"evt-{delta_sec}",
+        user_id=user_id,
+        timestamp=base + timedelta(seconds=delta_sec),
+        event_type=event_type,
+        authentication_method=method,
+        outcome=outcome,
+        device_id=device_id,
+        location=location,
+        authenticator_id=authenticator_id
+    )
+
+
+class TestContextAnalyzer:
+    def setup_method(self):
+        self.analyzer = ContextAnalyzer()
+
+    def test_new_device_detection(self):
+        journey = [
+            make_context_event(device_id="dev-unknown-999")
+        ]
+        evidence = self.analyzer.analyze_journey_context(
+            journey,
+            known_devices={"dev-laptop-001", "dev-phone-002"}
+        )
+        assert evidence.is_new_device is True
+        assert evidence.device_id == "dev-unknown-999"
+
+    def test_known_device_detection(self):
+        journey = [
+            make_context_event(device_id="dev-laptop-001")
+        ]
+        evidence = self.analyzer.analyze_journey_context(
+            journey,
+            known_devices={"dev-laptop-001"}
+        )
+        assert evidence.is_new_device is False
+
+    def test_missing_device_and_location_no_fabrication(self):
+        # When device/location is None, engine must NEVER invent values
+        journey = [
+            make_context_event(device_id=None, location=None)
+        ]
+        evidence = self.analyzer.analyze_journey_context(journey)
+        assert evidence.is_new_device is None
+        assert evidence.device_id is None
+        assert evidence.is_location_changed is None
+        assert evidence.location is None
+        assert any("unavailable" in note.lower() for note in evidence.evidence_notes)
+
+    def test_location_change_detection(self):
+        journey = [
+            make_context_event(location="Tokyo, JP")
+        ]
+        evidence = self.analyzer.analyze_journey_context(
+            journey,
+            known_locations={"New York, US", "London, UK"}
+        )
+        assert evidence.is_location_changed is True
+        assert evidence.location == "Tokyo, JP"
+
+    def test_authenticator_registration_event(self):
+        journey = [
+            make_context_event(method="password", outcome="SUCCESS", delta_sec=0),
+            make_context_event(
+                method="webauthn",
+                outcome="SUCCESS",
+                event_type="REGISTER_AUTHENTICATOR",
+                authenticator_id="auth-key-555",
+                delta_sec=30
+            )
+        ]
+        evidence = self.analyzer.analyze_journey_context(journey)
+        assert evidence.authenticator_registered is True
+        assert evidence.authenticator_id == "auth-key-555"
+
+    def test_cross_user_isolation_prevented(self):
+        # Strictly verify no cross-user contamination
+        journey = [
+            make_context_event(user_id="alice"),
+            make_context_event(user_id="bob")
+        ]
+        with pytest.raises(ValueError, match="Cross-user journey contamination detected"):
+            self.analyzer.analyze_journey_context(journey)
+
+    def test_failure_counting(self):
+        journey = [
+            make_context_event(outcome="FAILURE", delta_sec=0),
+            make_context_event(outcome="FAILURE", delta_sec=5),
+            make_context_event(outcome="SUCCESS", delta_sec=10)
+        ]
+        evidence = self.analyzer.analyze_journey_context(journey)
+        assert evidence.prior_failures_count == 2
