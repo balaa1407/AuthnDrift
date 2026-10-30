@@ -1,0 +1,49 @@
+[
+  {
+    "uuid": "okta-evt-001",
+    "published": "2026-10-30T14:10:00.000Z",
+    "eventType": "user.authentication.auth_via_mfa",
+    "outcome": {
+      "result": "FAILURE",
+      "reason": "FIDO2 user verification failed"
+    },
+    "actor": {
+      "id": "00u_alex_01",
+      "alternateId": "alex@company.com"
+    },
+    "client": {
+      "device": "MacBookPro18,1",
+      "geographicalContext": {
+        "city": "San Francisco",
+        "country": "United States"
+      }
+    },
+    "authenticationContext": {
+      "credentialProvider": "FIDO2 (WebAuthn)",
+      "externalSessionId": "okta-sess-99"
+    }
+  },
+  {
+    "uuid": "okta-evt-002",
+    "published": "2026-10-30T14:10:20.000Z",
+    "eventType": "user.authentication.authenticate",
+    "outcome": {
+      "result": "SUCCESS"
+    },
+    "actor": {
+      "id": "00u_alex_01",
+      "alternateId": "alex@company.com"
+    },
+    "client": {
+      "device": "MacBookPro18,1",
+      "geographicalContext": {
+        "city": "San Francisco",
+        "country": "United States"
+      }
+    },
+    "authenticationContext": {
+      "credentialProvider": "PASSWORD",
+      "externalSessionId": "okta-sess-99"
+    }
+  }
+]

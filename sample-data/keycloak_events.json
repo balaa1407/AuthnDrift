@@ -1,0 +1,289 @@
+[
+  {
+    "id": "kc-evt-alice-01",
+    "time": 1793368800000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-alice",
+    "sessionId": "sess-alice-001",
+    "ipAddress": "192.168.1.10",
+    "details": {
+      "username": "alice",
+      "auth_method": "passkey",
+      "device_id": "corporate-macbook-01",
+      "location": "Bangalore, IN",
+      "authenticator_id": "key-01"
+    }
+  },
+  {
+    "id": "kc-evt-bob-01",
+    "time": 1793368810000,
+    "type": "LOGIN_ERROR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-bob",
+    "sessionId": "sess-bob-001",
+    "ipAddress": "192.168.1.20",
+    "details": {
+      "username": "bob",
+      "auth_method": "passkey",
+      "error": "webauthn_error_cancelled",
+      "device_id": "laptop-01",
+      "location": "Bangalore, IN"
+    }
+  },
+  {
+    "id": "kc-evt-bob-02",
+    "time": 1793368825000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-bob",
+    "sessionId": "sess-bob-001",
+    "ipAddress": "192.168.1.20",
+    "details": {
+      "username": "bob",
+      "auth_method": "password",
+      "device_id": "laptop-01",
+      "location": "Bangalore, IN"
+    }
+  },
+  {
+    "id": "kc-evt-carol-01",
+    "time": 1793368840000,
+    "type": "LOGIN_ERROR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-carol",
+    "sessionId": "sess-carol-001",
+    "ipAddress": "203.0.113.5",
+    "details": {
+      "username": "carol",
+      "auth_method": "passkey",
+      "error": "fido2_timeout",
+      "device_id": "unfamiliar-phone-99",
+      "location": "Berlin, Germany"
+    }
+  },
+  {
+    "id": "kc-evt-carol-02",
+    "time": 1793368860000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-carol",
+    "sessionId": "sess-carol-001",
+    "ipAddress": "203.0.113.5",
+    "details": {
+      "username": "carol",
+      "auth_method": "password",
+      "device_id": "unfamiliar-phone-99",
+      "location": "Berlin, Germany"
+    }
+  },
+  {
+    "id": "kc-evt-dave-01",
+    "time": 1793368870000,
+    "type": "LOGIN_ERROR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-dave",
+    "sessionId": "sess-dave-001",
+    "ipAddress": "198.51.100.22",
+    "details": {
+      "username": "dave",
+      "auth_method": "password",
+      "error": "invalid_user_credentials",
+      "device_id": "unknown-box"
+    }
+  },
+  {
+    "id": "kc-evt-dave-02",
+    "time": 1793368875000,
+    "type": "LOGIN_ERROR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-dave",
+    "sessionId": "sess-dave-001",
+    "ipAddress": "198.51.100.22",
+    "details": {
+      "username": "dave",
+      "auth_method": "password",
+      "error": "invalid_user_credentials",
+      "device_id": "unknown-box"
+    }
+  },
+  {
+    "id": "kc-evt-dave-03",
+    "time": 1793368880000,
+    "type": "LOGIN_ERROR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-dave",
+    "sessionId": "sess-dave-001",
+    "ipAddress": "198.51.100.22",
+    "details": {
+      "username": "dave",
+      "auth_method": "password",
+      "error": "invalid_user_credentials",
+      "device_id": "unknown-box"
+    }
+  },
+  {
+    "id": "kc-evt-eve-01",
+    "time": 1793368890000,
+    "type": "LOGIN_ERROR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-eve",
+    "sessionId": "sess-eve-001",
+    "ipAddress": "192.168.1.30",
+    "details": {
+      "username": "eve",
+      "auth_method": "passkey",
+      "error": "device_not_registered"
+    }
+  },
+  {
+    "id": "kc-evt-eve-02",
+    "time": 1793368905000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-eve",
+    "sessionId": "sess-eve-001",
+    "ipAddress": "192.168.1.30",
+    "details": {
+      "username": "eve",
+      "auth_method": "password"
+    }
+  },
+  {
+    "id": "kc-evt-eve-03",
+    "time": 1793368920000,
+    "type": "REGISTER_AUTHENTICATOR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-eve",
+    "sessionId": "sess-eve-001",
+    "ipAddress": "192.168.1.30",
+    "details": {
+      "username": "eve",
+      "auth_method": "webauthn",
+      "authenticator_id": "rogue-token-007"
+    }
+  },
+  {
+    "id": "kc-evt-frank-01",
+    "time": 1793368930000,
+    "type": "LOGIN_ERROR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-frank",
+    "sessionId": "sess-frank-001",
+    "ipAddress": "192.168.1.40",
+    "details": {
+      "username": "frank",
+      "auth_method": "passkey",
+      "error": "token_expired"
+    }
+  },
+  {
+    "id": "kc-evt-frank-02",
+    "time": 1793368945000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-frank",
+    "sessionId": "sess-frank-001",
+    "ipAddress": "192.168.1.40",
+    "details": {
+      "username": "frank",
+      "auth_method": "password"
+    }
+  },
+  {
+    "id": "kc-evt-grace-01",
+    "time": 1793368960000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-grace",
+    "sessionId": "sess-grace-001",
+    "ipAddress": "192.168.1.50",
+    "details": {
+      "username": "grace",
+      "auth_method": "futuristic_quantum_handshake"
+    }
+  },
+  {
+    "id": "kc-evt-grace-02",
+    "time": 1793368980000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-grace",
+    "sessionId": "sess-grace-001",
+    "ipAddress": "192.168.1.50",
+    "details": {
+      "username": "grace",
+      "auth_method": "password"
+    }
+  },
+  {
+    "id": "kc-evt-heidi-01",
+    "time": 1793369000000,
+    "type": "LOGIN_ERROR",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-heidi",
+    "sessionId": "sess-heidi-001",
+    "details": {
+      "username": "heidi",
+      "auth_method": "passkey",
+      "error": "fido2_timeout"
+    }
+  },
+  {
+    "id": "kc-evt-heidi-02",
+    "time": 1793369010000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-heidi",
+    "sessionId": "sess-heidi-001",
+    "details": {
+      "username": "heidi",
+      "auth_method": "password"
+    }
+  },
+  {
+    "id": "kc-evt-ivan-01",
+    "time": 1793369030000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-ivan",
+    "sessionId": "sess-ivan-001",
+    "ipAddress": "192.168.1.60",
+    "details": {
+      "username": "ivan",
+      "auth_method": "totp"
+    }
+  },
+  {
+    "id": "kc-evt-ivan-02",
+    "time": 1793369040000,
+    "type": "LOGIN",
+    "realmId": "authdrift",
+    "clientId": "authdrift-app",
+    "userId": "usr-uuid-ivan",
+    "sessionId": "sess-ivan-001",
+    "ipAddress": "192.168.1.60",
+    "details": {
+      "username": "ivan",
+      "auth_method": "totp"
+    }
+  }
+]

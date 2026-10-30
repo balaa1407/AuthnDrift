@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuthDrift — Authentication Assurance Drift Monitor</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="navbar">
+    <div class="nav-brand">
+      <div class="logo-icon">🛡️</div>
+      <div>
+        <h1 class="logo-title">AuthDrift</h1>
+        <p class="logo-subtitle">Authentication Assurance Drift Detection & Journey Reconstruction</p>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <div class="badge badge-branch">Branch: <code>rohan/journey-ui</code></div>
+      <div class="badge badge-engine">Balaa Engine: <span class="status-indicator online"></span> Active</div>
+      <button class="btn btn-primary" id="btn-open-ingest">📥 Ingest Raw Logs</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Controls & Scenario Selector -->
+    <section class="scenario-bar">
+      <div class="scenario-selector">
+        <label for="scenario-dropdown"><strong>Controlled Scenario:</strong></label>
+        <select id="scenario-dropdown" class="select-input">
+          <option value="all">All Controlled Scenarios (TC01–TC09)</option>
+          <option value="tc01">TC01: Alice — Known-device Passkey Success (High Assurance, No Drift)</option>
+          <option value="tc02">TC02: Bob — Passkey Failure ➔ Password Fallback (Assurance Drift)</option>
+          <option value="tc03">TC03: Carol — Passkey Fallback + New Device Signal</option>
+          <option value="tc04">TC04: Dave — Repeated Failed Attempts (Brute-Force Pattern)</option>
+          <option value="tc05">TC05: Eve — Downgrade ➔ Rogue Authenticator Registration</option>
+          <option value="tc06">TC06: Frank — Legitimate Recovery / Migration Context</option>
+          <option value="okta">Vendor-Neutral: Okta System Log Ingestion (Alex)</option>
+        </select>
+        <button id="btn-load-scenario" class="btn btn-secondary">Load Scenario</button>
+      </div>
+
+      <div class="active-provider-tag" id="provider-badge">
+        Provider: <span id="current-provider-name">Keycloak</span>
+      </div>
+    </section>
+
+    <!-- Section A: Overview Metrics Cards -->
+    <section class="overview-section">
+      <div class="metric-card">
+        <span class="metric-label">Processed Events</span>
+        <span class="metric-value" id="val-events">-</span>
+        <span class="metric-hint" id="val-raw-events">From 0 raw logs</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Reconstructed Journeys</span>
+        <span class="metric-value" id="val-journeys">-</span>
+        <span class="metric-hint">Chronological sessions</span>
+      </div>
+
+      <div class="metric-card metric-card-alert">
+        <span class="metric-label">Assurance Drift Alerts</span>
+        <span class="metric-value" id="val-alerts">-</span>
+        <span class="metric-hint" id="val-drift-rate">0% drift rate</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Risk Severity Breakdown</span>
+        <div class="severity-pills">
+          <span class="pill pill-critical" id="pill-crit">CRIT: 0</span>
+          <span class="pill pill-high" id="pill-high">HIGH: 0</span>
+          <span class="pill pill-medium" id="pill-med">MED: 0</span>
+          <span class="pill pill-low" id="pill-low">LOW: 0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter Bar -->
+    <section class="filter-bar">
+      <div class="filter-group">
+        <label for="filter-user">Filter User:</label>
+        <input type="text" id="filter-user" class="text-input" placeholder="e.g. bob, alice...">
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-outcome">Outcome:</label>
+        <select id="filter-outcome" class="select-input">
+          <option value="">All Outcomes</option>
+          <option value="SUCCESS">Success Only</option>
+          <option value="FAILURE">Failure Only</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-severity">Severity:</label>
+        <select id="filter-severity" class="select-input">
+          <option value="">All Severities</option>
+          <option value="CRITICAL">Critical</option>
+          <option value="HIGH">High</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="LOW">Low</option>
+        </select>
+      </div>
+
+      <div class="filter-group checkbox-group">
+        <label>
+          <input type="checkbox" id="filter-drift-only">
+          <span>Drift Only</span>
+        </label>
+      </div>
+
+      <button id="btn-reset-filters" class="btn btn-ghost">Reset Filters</button>
+    </section>
+
+    <!-- Main Content Layout: Two Columns (Journeys Timeline + Alert Details) -->
+    <div class="dashboard-grid">
+      <!-- Section B: Authentication Journey Timeline -->
+      <section class="grid-column column-journeys">
+        <div class="column-header">
+          <h2>Authentication Journey Timeline</h2>
+          <span class="badge" id="journey-count-badge">0 Journeys</span>
+        </div>
+
+        <div id="journeys-container" class="journeys-list">
+          <div class="loading-state">Loading reconstructed authentication journeys...</div>
+        </div>
+      </section>
+
+      <!-- Section C: Alert & Detection Details -->
+      <section class="grid-column column-details">
+        <div class="column-header">
+          <h2>Explainable Security Intelligence</h2>
+          <span class="badge badge-outline">Balaa Detection Engine</span>
+        </div>
+
+        <div id="details-panel" class="details-card">
+          <div class="empty-state">
+            <div class="empty-icon">👈</div>
+            <h3>Select an Authentication Journey</h3>
+            <p>Click on any journey timeline card to inspect its assurance transitions, contextual evidence, and explainable risk score generated by Balaa's engine.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Ingestion & Raw Log Modal -->
+  <div class="modal" id="modal-ingest">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Ingest Identity Provider Logs</h3>
+        <button class="btn-close" id="btn-close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="ingest-provider">Source Provider Format:</label>
+          <select id="ingest-provider" class="select-input">
+            <option value="keycloak">Keycloak User Events (JSON)</option>
+            <option value="okta">Okta System Log (Vendor-Neutral JSON)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="raw-json-input">Raw Event JSON Array:</label>
+          <textarea id="raw-json-input" class="textarea-code" rows="12" placeholder='[{"id": "evt-01", "time": 1730300400000, "type": "LOGIN", ...}]'></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="btn-sample-kc">Load Keycloak Sample</button>
+          <button class="btn btn-ghost" id="btn-sample-okta">Load Okta Sample</button>
+          <button class="btn btn-primary" id="btn-submit-ingest">Normalize & Run Pipeline</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>AuthDrift CyberSecurity Final Year Project &bull; Team: Rohan (Pipeline, Reconstructor, UI) & Balaa (Assurance & Detection Engine)</p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
+

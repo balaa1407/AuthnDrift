@@ -1,0 +1,153 @@
+{
+  "realm": "authdrift",
+  "displayName": "AuthDrift Test Realm",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "eventsEnabled": true,
+  "eventsExpiration": 604800,
+  "adminEventsEnabled": true,
+  "adminEventsDetailsEnabled": true,
+  "eventsListeners": [
+    "jboss-logging"
+  ],
+  "enabledEventTypes": [
+    "LOGIN",
+    "LOGIN_ERROR",
+    "REGISTER",
+    "REGISTER_ERROR",
+    "CODE_TO_TOKEN",
+    "CODE_TO_TOKEN_ERROR",
+    "UPDATE_PASSWORD",
+    "FEDERATED_IDENTITY_LINK",
+    "REGISTER_AUTHENTICATOR",
+    "UPDATE_CREDENTIAL"
+  ],
+  "clients": [
+    {
+      "clientId": "authdrift-app",
+      "name": "AuthDrift Client Application",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:8000/*",
+        "http://127.0.0.1:8000/*"
+      ],
+      "webOrigins": [
+        "*"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@authdrift.local",
+      "firstName": "Alice",
+      "lastName": "PasskeyUser",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "webauthn",
+          "userLabel": "Alice Hardware Passkey",
+          "secretData": "{}",
+          "credentialData": "{\"aaguid\":\"00000000-0000-0000-0000-000000000000\"}"
+        }
+      ]
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "email": "bob@authdrift.local",
+      "firstName": "Bob",
+      "lastName": "FallbackUser",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Password123!",
+          "temporary": false
+        },
+        {
+          "type": "webauthn",
+          "userLabel": "Bob Passkey",
+          "secretData": "{}",
+          "credentialData": "{\"aaguid\":\"00000000-0000-0000-0000-000000000000\"}"
+        }
+      ]
+    },
+    {
+      "username": "carol",
+      "enabled": true,
+      "email": "carol@authdrift.local",
+      "firstName": "Carol",
+      "lastName": "NewDeviceUser",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Password123!",
+          "temporary": false
+        },
+        {
+          "type": "webauthn",
+          "userLabel": "Carol Passkey",
+          "secretData": "{}",
+          "credentialData": "{\"aaguid\":\"00000000-0000-0000-0000-000000000000\"}"
+        }
+      ]
+    },
+    {
+      "username": "dave",
+      "enabled": true,
+      "email": "dave@authdrift.local",
+      "firstName": "Dave",
+      "lastName": "BruteForceTarget",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Password123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "eve",
+      "enabled": true,
+      "email": "eve@authdrift.local",
+      "firstName": "Eve",
+      "lastName": "PersistenceAttacker",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Password123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "frank",
+      "enabled": true,
+      "email": "frank@authdrift.local",
+      "firstName": "Frank",
+      "lastName": "LegitimateRecovery",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Password123!",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}
+
