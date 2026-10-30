@@ -21,6 +21,15 @@ class RiskSeverity(str, Enum):
     CRITICAL = "CRITICAL"
 
 
+class AlertPriority(str, Enum):
+    """
+    Operational triage priority tiers for dashboard and SIEM routing.
+    """
+    INFORMATIONAL = "INFORMATIONAL"
+    INVESTIGATION_REQUIRED = "INVESTIGATION_REQUIRED"
+    HIGH_PRIORITY = "HIGH_PRIORITY"
+
+
 @dataclass
 class DriftResult:
     """
@@ -81,3 +90,4 @@ class SecurityAlert:
     explanation: str
     is_actionable: bool
     session_id: Optional[str] = None
+    priority: str = "INFORMATIONAL"

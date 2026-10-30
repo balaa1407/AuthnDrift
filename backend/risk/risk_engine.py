@@ -2,6 +2,16 @@
 AuthDrift: Risk Scoring Engine.
 Computes transparent, reproducible, non-duplicative risk scores based on
 drift results and contextual evidence.
+
+Mathematical Scoring Approach:
+The risk score S in [0, 100] is computed as an additive heuristic:
+    S = min(100, max(0, sum(w_i * 1_{factor_i})))
+
+Academic & Operational Disclaimer:
+This risk score is a deterministic, rule-based engineering heuristic calibrated
+for explainable security monitoring and SIEM alert prioritization. It represents
+relative suspiciousness across multi-step journeys, not a statistically calibrated
+probability of malicious compromise.
 """
 
 from typing import Dict, List, Optional
@@ -73,7 +83,7 @@ class RiskEngine:
             triggered_factors.append(factor_name)
             breakdown[factor_name] = pts
 
-        # Factor 3: Repeated Failures
+        # Factor 3: Repeated Failures (>= 2 attempts)
         if context_evidence.prior_failures_count >= 2:
             pts = self.config.weight_repeated_failures
             score += pts
@@ -81,7 +91,7 @@ class RiskEngine:
             triggered_factors.append(factor_name)
             breakdown[factor_name] = pts
 
-        # Factor 4: New Device
+        # Factor 4: New Device (only applied if confirmed new, not None or False)
         if context_evidence.is_new_device is True:
             pts = self.config.weight_new_device
             score += pts
@@ -89,7 +99,7 @@ class RiskEngine:
             triggered_factors.append(factor_name)
             breakdown[factor_name] = pts
 
-        # Factor 5: Location Change
+        # Factor 5: Location Change (only applied if confirmed changed, not None or False)
         if context_evidence.is_location_changed is True:
             pts = self.config.weight_location_change
             score += pts
@@ -97,7 +107,7 @@ class RiskEngine:
             triggered_factors.append(factor_name)
             breakdown[factor_name] = pts
 
-        # Factor 6: New Authenticator Registered Post-Downgrade
+        # Factor 6: New Authenticator Registered During Journey
         if context_evidence.authenticator_registered is True:
             pts = self.config.weight_authenticator_registered
             score += pts

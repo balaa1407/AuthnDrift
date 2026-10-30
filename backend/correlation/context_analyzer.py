@@ -36,6 +36,16 @@ class ContextAnalyzer:
                 f"Cross-user journey contamination detected: Multiple user_ids {user_ids} in single journey."
             )
 
+        # Deduplicate events by event_id to prevent log-replay artifacting
+        deduped_journey: List[AuthenticationEvent] = []
+        seen_ids: Set[str] = set()
+        for event in journey:
+            if event.event_id and event.event_id in seen_ids:
+                continue
+            if event.event_id:
+                seen_ids.add(event.event_id)
+            deduped_journey.append(event)
+
         known_devs = set(known_devices) if known_devices else set()
         known_locs = set(known_locations) if known_locations else set()
         known_auths = set(known_authenticators) if known_authenticators else set()
@@ -50,11 +60,11 @@ class ContextAnalyzer:
         notes: List[str] = []
 
         # Collect observations across journey
-        observed_devices = [e.device_id for e in journey if e.device_id is not None]
-        observed_locations = [e.location for e in journey if e.location is not None]
+        observed_devices = [e.device_id for e in deduped_journey if e.device_id is not None]
+        observed_locations = [e.location for e in deduped_journey if e.location is not None]
 
         # 1. Failure Counting
-        for event in journey:
+        for event in deduped_journey:
             if event.outcome and str(event.outcome).strip().upper() in ["FAILURE", "FAILED", "ERROR"]:
                 prior_failures_count += 1
 
@@ -98,15 +108,17 @@ class ContextAnalyzer:
                 detected_location = observed_locations[-1]
 
         # 4. Authenticator Registration Analysis
-        for event in journey:
-            if event.authenticator_id is not None:
+        for event in deduped_journey:
+            if event.authenticator_id is not None or str(event.event_type or "").strip().upper() in [
+                "REGISTER_AUTHENTICATOR", "UPDATE_CREDENTIAL", "CREDENTIAL_REGISTER", "REGISTER_CREDENTIAL"
+            ]:
                 detected_authenticator = event.authenticator_id
                 event_type_str = str(event.event_type).strip().upper() if event.event_type else ""
-                if event_type_str in ["REGISTER_AUTHENTICATOR", "UPDATE_CREDENTIAL", "CREDENTIAL_REGISTER"]:
+                if event_type_str in ["REGISTER_AUTHENTICATOR", "UPDATE_CREDENTIAL", "CREDENTIAL_REGISTER", "REGISTER_CREDENTIAL"]:
                     authenticator_registered = True
-                    notes.append(f"New authenticator registered during session: '{event.authenticator_id}'.")
+                    notes.append(f"New authenticator registered during session: '{event.authenticator_id or 'unspecified'}'.")
                     break
-                elif known_auths and event.authenticator_id not in known_auths:
+                elif known_auths and event.authenticator_id and event.authenticator_id not in known_auths:
                     authenticator_registered = True
                     notes.append(f"Unregistered authenticator used: '{event.authenticator_id}'.")
                     break

@@ -8,7 +8,13 @@ import uuid
 from datetime import datetime, timezone
 from typing import List, Optional
 from backend.models.event import AuthenticationEvent
-from backend.models.detection import DriftResult, ContextEvidence, RiskAssessment, SecurityAlert
+from backend.models.detection import (
+    DriftResult,
+    ContextEvidence,
+    RiskAssessment,
+    SecurityAlert,
+    AlertPriority
+)
 
 
 class AlertGenerator:
@@ -78,6 +84,14 @@ class AlertGenerator:
 
         is_actionable = drift_result.drift_detected or (risk_assessment.score >= 50)
 
+        # Determine Operational Priority Tier
+        if risk_assessment.score >= 60 or context_evidence.authenticator_registered is True:
+            priority = AlertPriority.HIGH_PRIORITY.value
+        elif drift_result.drift_detected or risk_assessment.score >= 30:
+            priority = AlertPriority.INVESTIGATION_REQUIRED.value
+        else:
+            priority = AlertPriority.INFORMATIONAL.value
+
         return SecurityAlert(
             alert_id=alert_id,
             user_id=user_id,
@@ -89,5 +103,6 @@ class AlertGenerator:
             methods_involved=methods_involved,
             explanation=" ".join(explanation_parts),
             is_actionable=is_actionable,
-            session_id=session_id or (journey[0].session_id if journey else None)
+            session_id=session_id or (journey[0].session_id if journey else None),
+            priority=priority
         )
