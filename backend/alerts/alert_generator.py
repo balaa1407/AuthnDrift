@@ -28,15 +28,19 @@ class AlertGenerator:
         alert_id = f"alert-{uuid.uuid4().hex[:12]}"
         user_id = journey[0].user_id if journey else "unknown_user"
         timestamp = journey[-1].timestamp if journey else datetime.now(timezone.utc)
-        methods_involved = [e.authentication_method for e in journey]
+        methods_involved = [e.authentication_method for e in journey if e.authentication_method]
+
+        # Preserve chronological ordering when reporting distinct methods
+        unique_methods_ordered = list(dict.fromkeys(methods_involved))
 
         # Generate narrative explanation
         explanation_parts: List[str] = []
 
         if drift_result.drift_detected:
+            methods_str = ", ".join(unique_methods_ordered) if unique_methods_ordered else "unspecified"
             explanation_parts.append(
                 f"Authentication assurance drift detected for user '{user_id}'. "
-                f"Journey contained {len(journey)} events involving methods: {', '.join(set(methods_involved))}."
+                f"Journey contained {len(journey)} events involving methods: {methods_str}."
             )
             explanation_parts.append(f"Transition Analysis: {drift_result.reason}")
         else:

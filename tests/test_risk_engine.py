@@ -7,6 +7,10 @@ from backend.models.detection import DriftResult, ContextEvidence, RiskSeverity
 from backend.models.assurance import AssuranceLevel
 from backend.risk.risk_config import RiskEngineConfig
 from backend.risk.risk_engine import RiskEngine
+from backend.detection.detection_rules import (
+    RULE_FAILED_STRONG_SUCCESS_WEAK,
+    RULE_MULTI_FAILURE_FALLBACK
+)
 
 
 class TestRiskEngine:
@@ -44,7 +48,8 @@ class TestRiskEngine:
             drift_detected=True,
             reason="Failed strong authentication (passkey - HIGH) followed by successful fallback (password - LOW).",
             previous_assurance=AssuranceLevel.HIGH,
-            current_assurance=AssuranceLevel.LOW
+            current_assurance=AssuranceLevel.LOW,
+            transition_type=RULE_FAILED_STRONG_SUCCESS_WEAK
         )
         context = ContextEvidence(
             is_new_device=True,
@@ -82,7 +87,8 @@ class TestRiskEngine:
             drift_detected=True,
             reason="Failed strong authentication",
             previous_assurance=AssuranceLevel.HIGH,
-            current_assurance=AssuranceLevel.LOW
+            current_assurance=AssuranceLevel.LOW,
+            transition_type=RULE_FAILED_STRONG_SUCCESS_WEAK
         )
         context = ContextEvidence(
             is_new_device=True,
@@ -94,3 +100,19 @@ class TestRiskEngine:
         # Sum would be 40 + 15 + 10 + 20 + 15 + 25 = 125, capped at 100
         assert assessment.score == 100
         assert assessment.severity == RiskSeverity.CRITICAL
+
+    def test_multi_failure_fallback_triggers_strong_failure_factor(self):
+        # Defect regression: machine-readable RULE_MULTI_FAILURE_FALLBACK must trigger Factor 2
+        drift = DriftResult(
+            drift_detected=True,
+            reason="Multiple failed authentication attempts (2) followed by assurance downgrade from HIGH (passkey) to LOW (password).",
+            previous_assurance=AssuranceLevel.HIGH,
+            current_assurance=AssuranceLevel.LOW,
+            transition_type=RULE_MULTI_FAILURE_FALLBACK
+        )
+        context = ContextEvidence(prior_failures_count=2)
+        assessment = self.engine.evaluate_risk(drift, context)
+        # 40 (high->low) + 15 (failed strong fallback) + 10 (repeated failures) = 65 -> HIGH
+        assert assessment.score == 65
+        assert "Failed Strong Method Prior to Fallback" in assessment.triggered_factors
+        assert len(assessment.triggered_factors) == 3

@@ -103,3 +103,25 @@ class TestDriftDetector:
         res = self.detector.detect_drift(journey)
         assert res.drift_detected is True
         assert res.transition_type == RULE_DOWNGRADE_GENERAL
+
+    def test_unsorted_journey_events_defensive_sorting(self):
+        # Defect regression: raw log aggregators might provide out-of-order events
+        journey = [
+            create_event("password", "SUCCESS", 20),
+            create_event("passkey", "FAILURE", 0)
+        ]
+        res = self.detector.detect_drift(journey)
+        assert res.drift_detected is True
+        assert res.previous_method == "passkey"
+        assert res.current_method == "password"
+        assert res.transition_type == RULE_FAILED_STRONG_SUCCESS_WEAK
+
+    def test_none_outcome_handling_does_not_crash(self):
+        # Defensive check against None/empty outcome
+        journey = [
+            create_event("passkey", None, 0),
+            create_event("password", "SUCCESS", 10)
+        ]
+        res = self.detector.detect_drift(journey)
+        assert res.drift_detected is True
+        assert res.transition_type == RULE_DOWNGRADE_GENERAL

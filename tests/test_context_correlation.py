@@ -112,3 +112,47 @@ class TestContextAnalyzer:
         ]
         evidence = self.analyzer.analyze_journey_context(journey)
         assert evidence.prior_failures_count == 2
+
+    def test_sticky_anomaly_new_device_multi_event(self):
+        # Defect regression: unfamiliar device in early event must not be overwritten by known device in later event
+        journey = [
+            make_context_event(device_id="unfamiliar-phone-99", delta_sec=0),
+            make_context_event(device_id="dev-laptop-001", delta_sec=10)
+        ]
+        evidence = self.analyzer.analyze_journey_context(
+            journey,
+            known_devices={"dev-laptop-001"}
+        )
+        assert evidence.is_new_device is True
+        assert evidence.device_id == "unfamiliar-phone-99"
+
+    def test_sticky_anomaly_location_change_multi_event(self):
+        # Defect regression: unfamiliar location in early event must not be overwritten by known location in later event
+        journey = [
+            make_context_event(location="Tokyo, JP", delta_sec=0),
+            make_context_event(location="New York, US", delta_sec=10)
+        ]
+        evidence = self.analyzer.analyze_journey_context(
+            journey,
+            known_locations={"New York, US"}
+        )
+        assert evidence.is_location_changed is True
+        assert evidence.location == "Tokyo, JP"
+
+    def test_device_observed_without_baseline_is_none(self):
+        # Device observed but no baseline provided -> is_new_device should be None, not False
+        journey = [
+            make_context_event(device_id="my-phone", delta_sec=0)
+        ]
+        evidence = self.analyzer.analyze_journey_context(journey, known_devices=None)
+        assert evidence.is_new_device is None
+        assert evidence.device_id == "my-phone"
+        assert any("no baseline available" in n.lower() for n in evidence.evidence_notes)
+
+    def test_none_outcome_does_not_crash(self):
+        # Null outcome handling
+        journey = [
+            make_context_event(outcome=None, delta_sec=0)
+        ]
+        evidence = self.analyzer.analyze_journey_context(journey)
+        assert evidence.prior_failures_count == 0

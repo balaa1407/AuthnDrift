@@ -71,3 +71,23 @@ class TestAlertGenerator:
         alert = self.generator.generate_alert(journey, drift, context, risk)
         assert "new device" not in alert.explanation.lower()
         assert "location changed" not in alert.explanation.lower()
+
+    def test_alert_chronological_method_ordering(self):
+        # Defect regression: Ensure methods in narrative are ordered chronologically without set scrambling
+        journey = [
+            make_event("passkey", "FAILURE"),
+            make_event("totp", "FAILURE"),
+            make_event("password", "SUCCESS")
+        ]
+        drift = DriftResult(
+            drift_detected=True,
+            reason="Multiple failures fallback",
+            previous_method="passkey",
+            current_method="password"
+        )
+        context = ContextEvidence()
+        risk = RiskAssessment(score=60, severity=RiskSeverity.HIGH)
+
+        alert = self.generator.generate_alert(journey, drift, context, risk)
+        # Narrative must mention methods in sequence: passkey, totp, password
+        assert "passkey, totp, password" in alert.explanation

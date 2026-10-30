@@ -3,6 +3,7 @@ AuthDrift: Core Drift Detection Engine.
 Analyses reconstructed authentication journeys and flags assurance downgrades with supporting evidence.
 """
 
+from datetime import datetime
 from typing import List, Optional
 from backend.models.event import AuthenticationEvent
 from backend.models.detection import DriftResult
@@ -18,6 +19,13 @@ from backend.detection.detection_rules import (
 )
 
 
+def _is_failure_outcome(outcome: Optional[str]) -> bool:
+    """Helper to safely evaluate failure outcomes without crashing on None or non-string."""
+    if not outcome:
+        return False
+    return str(outcome).strip().upper() in ["FAILURE", "FAILED", "ERROR"]
+
+
 class DriftDetector:
     """
     Evaluates authentication journeys for assurance drift.
@@ -29,6 +37,7 @@ class DriftDetector:
     def detect_drift(self, journey: List[AuthenticationEvent]) -> DriftResult:
         """
         Analyzes a chronological authentication journey to identify assurance drift.
+        Defensively sorts events chronologically to ensure robust evaluation.
         """
         if not journey or len(journey) < 2:
             return DriftResult(
@@ -36,14 +45,20 @@ class DriftDetector:
                 reason="Insufficient events in journey to detect drift (minimum 2 required)."
             )
 
-        max_previous_event = journey[0]
+        # Defensively ensure events are chronologically ordered
+        sorted_journey = sorted(
+            journey,
+            key=lambda e: e.timestamp if e.timestamp else datetime.min
+        )
+
+        max_previous_event = sorted_journey[0]
         max_previous_assurance = assign_assurance(max_previous_event.authentication_method)
-        has_prior_failure = (max_previous_event.outcome.strip().upper() in ["FAILURE", "FAILED", "ERROR"])
+        has_prior_failure = _is_failure_outcome(max_previous_event.outcome)
         failure_count = 1 if has_prior_failure else 0
 
-        for current_event in journey[1:]:
+        for current_event in sorted_journey[1:]:
             current_assurance = assign_assurance(current_event.authentication_method)
-            current_is_failure = (current_event.outcome.strip().upper() in ["FAILURE", "FAILED", "ERROR"])
+            current_is_failure = _is_failure_outcome(current_event.outcome)
 
             if current_is_failure:
                 failure_count += 1

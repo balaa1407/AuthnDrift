@@ -8,6 +8,10 @@ from typing import Dict, List, Optional
 from backend.models.detection import DriftResult, ContextEvidence, RiskAssessment, RiskSeverity
 from backend.models.assurance import AssuranceLevel
 from backend.risk.risk_config import RiskEngineConfig
+from backend.detection.detection_rules import (
+    RULE_FAILED_STRONG_SUCCESS_WEAK,
+    RULE_MULTI_FAILURE_FALLBACK
+)
 
 
 class RiskEngine:
@@ -52,7 +56,17 @@ class RiskEngine:
                 breakdown[factor_name] = pts
 
         # Factor 2: Preceding Strong Authentication Failure
-        if "Failed strong authentication" in drift_result.reason:
+        # Triggered when strong authentication failed prior to fallback/downgrade
+        has_failed_strong = (
+            drift_result.transition_type == RULE_FAILED_STRONG_SUCCESS_WEAK
+            or (
+                drift_result.transition_type == RULE_MULTI_FAILURE_FALLBACK
+                and drift_result.previous_assurance == AssuranceLevel.HIGH
+            )
+            or ("Failed strong authentication" in (drift_result.reason or ""))
+        )
+
+        if has_failed_strong:
             pts = self.config.weight_failed_strong_preceding
             score += pts
             factor_name = "Failed Strong Method Prior to Fallback"
