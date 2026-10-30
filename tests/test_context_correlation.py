@@ -16,11 +16,12 @@ def make_context_event(
     location: str = None,
     authenticator_id: str = None,
     event_type: str = "LOGIN",
-    delta_sec: int = 0
+    delta_sec: int = 0,
+    event_id: str = None
 ) -> AuthenticationEvent:
     base = datetime(2026, 10, 30, 10, 0, 0, tzinfo=timezone.utc)
     return AuthenticationEvent(
-        event_id=f"evt-{delta_sec}",
+        event_id=event_id or f"evt-{delta_sec}",
         user_id=user_id,
         timestamp=base + timedelta(seconds=delta_sec),
         event_type=event_type,
@@ -156,3 +157,13 @@ class TestContextAnalyzer:
         ]
         evidence = self.analyzer.analyze_journey_context(journey)
         assert evidence.prior_failures_count == 0
+
+    def test_duplicate_events_deduplicated_failure_counting(self):
+        # Log replays with identical event_id must not inflate failure count
+        journey = [
+            make_context_event(outcome="FAILURE", delta_sec=0, event_id="dup-1"),
+            make_context_event(outcome="FAILURE", delta_sec=0, event_id="dup-1"),
+            make_context_event(outcome="SUCCESS", delta_sec=10, event_id="unique-2")
+        ]
+        evidence = self.analyzer.analyze_journey_context(journey)
+        assert evidence.prior_failures_count == 1

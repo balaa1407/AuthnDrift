@@ -42,6 +42,46 @@ class TestRiskEngine:
         assert assessment.severity == RiskSeverity.MEDIUM
         assert "Assurance Downgrade (HIGH -> LOW)" in assessment.triggered_factors
 
+    def test_high_to_medium_downgrade_scoring(self):
+        drift = DriftResult(
+            drift_detected=True,
+            reason="Authentication assurance decreased from HIGH to MEDIUM",
+            previous_assurance=AssuranceLevel.HIGH,
+            current_assurance=AssuranceLevel.MEDIUM
+        )
+        context = ContextEvidence()
+        assessment = self.engine.evaluate_risk(drift, context)
+        assert assessment.score == 20
+        assert assessment.severity == RiskSeverity.LOW
+        assert "Assurance Downgrade (HIGH -> MEDIUM)" in assessment.triggered_factors
+
+    def test_medium_to_low_downgrade_scoring(self):
+        drift = DriftResult(
+            drift_detected=True,
+            reason="Authentication assurance decreased from MEDIUM to LOW",
+            previous_assurance=AssuranceLevel.MEDIUM,
+            current_assurance=AssuranceLevel.LOW
+        )
+        context = ContextEvidence()
+        assessment = self.engine.evaluate_risk(drift, context)
+        assert assessment.score == 15
+        assert assessment.severity == RiskSeverity.LOW
+        assert "Assurance Downgrade (MEDIUM -> LOW)" in assessment.triggered_factors
+
+    def test_missing_context_adds_zero_risk(self):
+        # Unconfirmed/missing baselines (None) must strictly contribute 0 pts
+        drift = DriftResult(drift_detected=False, reason="No drift")
+        context = ContextEvidence(
+            is_new_device=None,
+            is_location_changed=None,
+            authenticator_registered=None,
+            prior_failures_count=0
+        )
+        assessment = self.engine.evaluate_risk(drift, context)
+        assert assessment.score == 0
+        assert assessment.severity == RiskSeverity.LOW
+        assert len(assessment.triggered_factors) == 0
+
     def test_compound_risk_with_new_device_and_failures(self):
         # Scenario: Failed passkey, password success from new device
         drift = DriftResult(

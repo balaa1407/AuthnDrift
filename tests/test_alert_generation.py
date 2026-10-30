@@ -5,7 +5,13 @@ Unit tests for AuthDrift Explainable Alert Generation (Objective 4).
 from datetime import datetime, timezone
 import pytest
 from backend.models.event import AuthenticationEvent
-from backend.models.detection import DriftResult, ContextEvidence, RiskAssessment, RiskSeverity
+from backend.models.detection import (
+    DriftResult,
+    ContextEvidence,
+    RiskAssessment,
+    RiskSeverity,
+    AlertPriority
+)
 from backend.models.assurance import AssuranceLevel
 from backend.alerts.alert_generator import AlertGenerator
 
@@ -55,6 +61,7 @@ class TestAlertGenerator:
         assert alert.user_id == "user-123"
         assert alert.drift_detected is True
         assert alert.is_actionable is True
+        assert alert.priority == AlertPriority.HIGH_PRIORITY.value
         assert "iphone-15-pro" in alert.explanation
         assert "passkey" in alert.explanation.lower()
         assert "password" in alert.explanation.lower()
@@ -69,6 +76,7 @@ class TestAlertGenerator:
         risk = RiskAssessment(score=0, severity=RiskSeverity.LOW, rationale="Normal")
 
         alert = self.generator.generate_alert(journey, drift, context, risk)
+        assert alert.priority == AlertPriority.INFORMATIONAL.value
         assert "new device" not in alert.explanation.lower()
         assert "location changed" not in alert.explanation.lower()
 
@@ -89,5 +97,30 @@ class TestAlertGenerator:
         risk = RiskAssessment(score=60, severity=RiskSeverity.HIGH)
 
         alert = self.generator.generate_alert(journey, drift, context, risk)
-        # Narrative must mention methods in sequence: passkey, totp, password
         assert "passkey, totp, password" in alert.explanation
+
+    def test_alert_priority_tiers(self):
+        journey = [make_event("passkey")]
+        drift_no = DriftResult(drift_detected=False, reason="No drift")
+        drift_yes = DriftResult(drift_detected=True, reason="Drift occurred")
+
+        # 1. Informational: no drift, low score
+        alert_info = self.generator.generate_alert(
+            journey, drift_no, ContextEvidence(), RiskAssessment(score=10, severity=RiskSeverity.LOW)
+        )
+        assert alert_info.priority == AlertPriority.INFORMATIONAL.value
+        assert alert_info.is_actionable is False
+
+        # 2. Investigation Required: drift detected with moderate score
+        alert_investigate = self.generator.generate_alert(
+            journey, drift_yes, ContextEvidence(), RiskAssessment(score=40, severity=RiskSeverity.MEDIUM)
+        )
+        assert alert_investigate.priority == AlertPriority.INVESTIGATION_REQUIRED.value
+        assert alert_investigate.is_actionable is True
+
+        # 3. High Priority: high score or critical persistent signal
+        alert_high = self.generator.generate_alert(
+            journey, drift_yes, ContextEvidence(), RiskAssessment(score=80, severity=RiskSeverity.CRITICAL)
+        )
+        assert alert_high.priority == AlertPriority.HIGH_PRIORITY.value
+        assert alert_high.is_actionable is True

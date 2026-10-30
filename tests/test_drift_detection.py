@@ -3,31 +3,37 @@ Unit tests for AuthDrift Assurance Drift Detection Engine (Objective 3).
 """
 
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 import pytest
 from backend.models.event import AuthenticationEvent
 from backend.models.detection import DriftResult
 from backend.models.assurance import AssuranceLevel
 from backend.detection.drift_detector import DriftDetector
 from backend.detection.detection_rules import (
+    DriftDetectionConfig,
     RULE_FAILED_STRONG_SUCCESS_WEAK,
     RULE_MULTI_FAILURE_FALLBACK,
     RULE_DOWNGRADE_GENERAL,
-    RULE_REPEATED_FAILURES_SAME_METHOD
+    RULE_REPEATED_FAILURES_SAME_METHOD,
+    RULE_STEP_UP_AUTHENTICATION
 )
 
 
 def create_event(
     method: str,
-    outcome: str = "SUCCESS",
+    outcome: Optional[str] = "SUCCESS",
     delta_seconds: int = 0,
     user_id: str = "user-101",
-    event_type: str = "LOGIN"
+    event_type: str = "LOGIN",
+    event_id: Optional[str] = None,
+    timestamp: Optional[datetime] = None
 ) -> AuthenticationEvent:
     base_time = datetime(2026, 10, 30, 12, 0, 0, tzinfo=timezone.utc)
+    evt_ts = timestamp if timestamp is not None else (base_time + timedelta(seconds=delta_seconds))
     return AuthenticationEvent(
-        event_id=f"evt-{method}-{delta_seconds}",
+        event_id=event_id or f"evt-{method}-{delta_seconds}",
         user_id=user_id,
-        timestamp=base_time + timedelta(seconds=delta_seconds),
+        timestamp=evt_ts,
         event_type=event_type,
         authentication_method=method,
         outcome=outcome
@@ -65,6 +71,28 @@ class TestDriftDetector:
         assert res.current_assurance == AssuranceLevel.LOW
         assert "Failed strong authentication" in res.reason
 
+    def test_high_to_medium_downgrade(self):
+        journey = [
+            create_event("passkey", "FAILURE", 0),
+            create_event("totp", "SUCCESS", 15)
+        ]
+        res = self.detector.detect_drift(journey)
+        assert res.drift_detected is True
+        assert res.transition_type == RULE_FAILED_STRONG_SUCCESS_WEAK
+        assert res.previous_assurance == AssuranceLevel.HIGH
+        assert res.current_assurance == AssuranceLevel.MEDIUM
+
+    def test_medium_to_low_downgrade(self):
+        journey = [
+            create_event("totp", "FAILURE", 0),
+            create_event("password", "SUCCESS", 15)
+        ]
+        res = self.detector.detect_drift(journey)
+        assert res.drift_detected is True
+        assert res.transition_type == RULE_FAILED_STRONG_SUCCESS_WEAK
+        assert res.previous_assurance == AssuranceLevel.MEDIUM
+        assert res.current_assurance == AssuranceLevel.LOW
+
     def test_multi_failure_then_fallback(self):
         journey = [
             create_event("passkey", "FAILURE", 0),
@@ -84,6 +112,42 @@ class TestDriftDetector:
         ]
         res = self.detector.detect_drift(journey)
         assert res.drift_detected is False
+        assert res.transition_type == RULE_STEP_UP_AUTHENTICATION
+
+    def test_step_up_then_downgrade(self):
+        # Journey steps up from password to passkey, but then subsequently downgrades back to password
+        journey = [
+            create_event("password", "SUCCESS", 0),
+            create_event("passkey", "SUCCESS", 10),
+            create_event("password", "SUCCESS", 20)
+        ]
+        res = self.detector.detect_drift(journey)
+        assert res.drift_detected is True
+        assert res.previous_method == "passkey"
+        assert res.previous_assurance == AssuranceLevel.HIGH
+        assert res.current_method == "password"
+        assert res.current_assurance == AssuranceLevel.LOW
+        assert res.transition_type == RULE_DOWNGRADE_GENERAL
+
+    def test_weak_failure_then_strong_success_no_downgrade(self):
+        # Failing a weak method and succeeding with a strong method is step-up recovery, NOT a downgrade
+        journey = [
+            create_event("password", "FAILURE", 0),
+            create_event("passkey", "SUCCESS", 15)
+        ]
+        res = self.detector.detect_drift(journey)
+        assert res.drift_detected is False
+        assert res.transition_type == RULE_STEP_UP_AUTHENTICATION
+
+    def test_strong_failure_then_weak_failure(self):
+        # Failing strong method followed by failing weaker fallback
+        journey = [
+            create_event("passkey", "FAILURE", 0),
+            create_event("password", "FAILURE", 15)
+        ]
+        res = self.detector.detect_drift(journey)
+        assert res.drift_detected is True
+        assert res.transition_type == RULE_MULTI_FAILURE_FALLBACK
 
     def test_repeated_failures_same_assurance(self):
         journey = [
@@ -125,3 +189,77 @@ class TestDriftDetector:
         res = self.detector.detect_drift(journey)
         assert res.drift_detected is True
         assert res.transition_type == RULE_DOWNGRADE_GENERAL
+
+    def test_config_require_prior_failure(self):
+        # When require_prior_failure is True, downgrade without failure is ignored
+        config = DriftDetectionConfig(require_prior_failure=True)
+        detector = DriftDetector(config=config)
+        journey = [
+            create_event("passkey", "SUCCESS", 0),
+            create_event("password", "SUCCESS", 10)
+        ]
+        res = detector.detect_drift(journey)
+        assert res.drift_detected is False
+
+    def test_config_detect_any_downgrade_false(self):
+        # When detect_any_downgrade is False, general downgrade without failure is ignored
+        config = DriftDetectionConfig(detect_any_downgrade=False)
+        detector = DriftDetector(config=config)
+        journey = [
+            create_event("passkey", "SUCCESS", 0),
+            create_event("password", "SUCCESS", 10)
+        ]
+        res = detector.detect_drift(journey)
+        assert res.drift_detected is False
+
+    def test_config_min_assurance_drop_threshold(self):
+        # min_assurance_drop=2: HIGH -> MEDIUM (drop 1) is ignored; HIGH -> LOW (drop 2) is flagged
+        config = DriftDetectionConfig(min_assurance_drop=2)
+        detector = DriftDetector(config=config)
+
+        journey_drop_1 = [
+            create_event("passkey", "FAILURE", 0),
+            create_event("totp", "SUCCESS", 10)
+        ]
+        assert detector.detect_drift(journey_drop_1).drift_detected is False
+
+        journey_drop_2 = [
+            create_event("passkey", "FAILURE", 0),
+            create_event("password", "SUCCESS", 10)
+        ]
+        assert detector.detect_drift(journey_drop_2).drift_detected is True
+
+    def test_config_track_step_ups_false(self):
+        # When track_step_ups is False, step-up yields NORMAL_JOURNEY
+        config = DriftDetectionConfig(track_step_ups=False)
+        detector = DriftDetector(config=config)
+        journey = [
+            create_event("password", "SUCCESS", 0),
+            create_event("passkey", "SUCCESS", 10)
+        ]
+        res = detector.detect_drift(journey)
+        assert res.drift_detected is False
+        assert res.transition_type == "NORMAL_JOURNEY"
+
+    def test_lifecycle_event_does_not_participate_in_drift(self):
+        # REGISTER_AUTHENTICATOR must not be evaluated as an authentication downgrade
+        journey = [
+            create_event("passkey", "SUCCESS", 0),
+            create_event("totp", "SUCCESS", 10, event_type="REGISTER_AUTHENTICATOR")
+        ]
+        res = self.detector.detect_drift(journey)
+        # Only 1 true auth event exists, so insufficient auth events for drift
+        assert res.drift_detected is False
+        assert "Insufficient authentication events" in res.reason
+
+    def test_duplicate_events_deduplication(self):
+        # Repeated log delivery of identical event_id is safely deduplicated
+        journey = [
+            create_event("passkey", "FAILURE", 0, event_id="duplicate-event-01"),
+            create_event("passkey", "FAILURE", 0, event_id="duplicate-event-01"),
+            create_event("password", "SUCCESS", 10, event_id="event-02")
+        ]
+        res = self.detector.detect_drift(journey)
+        assert res.drift_detected is True
+        # Only 1 unique failure occurred before fallback
+        assert res.transition_type == RULE_FAILED_STRONG_SUCCESS_WEAK
