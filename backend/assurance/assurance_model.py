@@ -11,6 +11,8 @@ the overall authentication transaction and process. AuthDrift models the relativ
 assurance contribution of individual authenticators and mechanisms (LOW < MEDIUM < HIGH)
 based on NIST SP 800-63B authenticator requirements (e.g., memorized secrets vs.
 out-of-band/shared secrets vs. phishing-resistant cryptographic hardware authenticators).
+An individual authenticator mapping does not alone certify a full NIST AAL rating without
+considering factor combinations, channel security, and verifier implementation.
 """
 
 from typing import Dict, Optional, Tuple
@@ -33,8 +35,10 @@ class AssuranceModel:
             "fido2": AssuranceLevel.HIGH,
             "webauthn": AssuranceLevel.HIGH,
             "hardware_token": AssuranceLevel.HIGH,
+            "security_key": AssuranceLevel.HIGH,
             "u2f": AssuranceLevel.HIGH,
             "client_cert": AssuranceLevel.HIGH,
+            "client_certificate": AssuranceLevel.HIGH,
 
             # Medium Assurance (Multi-factor / Out-of-band shared secrets)
             "totp": AssuranceLevel.MEDIUM,
@@ -44,6 +48,7 @@ class AssuranceModel:
             "sms": AssuranceLevel.MEDIUM,
             "email_otp": AssuranceLevel.MEDIUM,
             "push_notification": AssuranceLevel.MEDIUM,
+            "push": AssuranceLevel.MEDIUM,
 
             # Low Assurance (Single-factor memorized secrets / legacy)
             "password": AssuranceLevel.LOW,
@@ -57,9 +62,11 @@ class AssuranceModel:
             "passkey": "NIST SP 800-63B Authenticator Requirements (AAL2/AAL3-capable): Phishing-resistant asymmetric cryptographic keypair bound to origin, resistant to verifier-impersonation.",
             "fido2": "NIST SP 800-63B Hardware Authenticator (AAL3-capable): Hardware-backed cryptographic token resistant to verifier impersonation and credential relay.",
             "webauthn": "NIST SP 800-63B Cryptographic Authenticator (AAL2/AAL3-capable): Browser-standard public key credentials preventing credential relay.",
-            "hardware_token": "NIST SP 800-63B Hardware Token (AAL3-capable): Physical cryptographic token requiring hardware possession.",
+            "hardware_token": "NIST SP 800-63B Hardware Token (AAL3-capable): Dedicated physical cryptographic token requiring hardware possession.",
+            "security_key": "NIST SP 800-63B Hardware Token (AAL3-capable): Physical FIDO2/WebAuthn security key offering hardware-backed cryptographic proof of possession.",
             "u2f": "NIST SP 800-63B Challenge-Response Authenticator (AAL2/AAL3-capable): Universal 2nd Factor challenge-response token.",
             "client_cert": "NIST SP 800-63B Cryptographic Authenticator (AAL3-capable): Mutual TLS client certificate backed by public key infrastructure.",
+            "client_certificate": "NIST SP 800-63B Cryptographic Authenticator (AAL3-capable): Asymmetric client certificate providing cryptographic verification.",
 
             "totp": "NIST SP 800-63B Multi-Factor Software Authenticator (AAL2): Time-based one-time password from authenticator app; possession-based but susceptible to proxy phishing.",
             "authenticator_app": "NIST SP 800-63B Software Authenticator (AAL2): Out-of-band software authenticator requiring device possession.",
@@ -68,11 +75,12 @@ class AssuranceModel:
             "sms": "NIST SP 800-63B Out-of-Band Authenticator (AAL2 Restricted): Telephony-based delivery channel with carrier dependencies.",
             "email_otp": "NIST SP 800-63B Out-of-Band Authenticator (AAL2 Restricted): Out-of-band email token vulnerable to mailbox compromise.",
             "push_notification": "NIST SP 800-63B Out-of-Band Authenticator (AAL2): Out-of-band push confirmation vulnerable to MFA fatigue / push-bombing.",
+            "push": "NIST SP 800-63B Out-of-Band Authenticator (AAL2): Push notification vulnerable to user fatigue and accidental confirmation.",
 
             "password": "NIST SP 800-63B Memorized Secret (AAL1): Single-factor memorized secret susceptible to credential stuffing, brute force, and phishing.",
             "pin": "NIST SP 800-63B Memorized Secret (AAL1): Short memorized secret with limited entropy.",
             "knowledge_based": "NIST SP 800-63B Prohibited / Deprecated: Static personal data easily harvestable via open source intelligence (OSINT).",
-            "security_questions": "NIST SP 800-63B Prorecated: Weak static knowledge questions offering minimal security guarantee.",
+            "security_questions": "NIST SP 800-63B Prohibited / Deprecated: Weak static knowledge questions offering minimal security guarantee.",
         }
 
         if custom_mapping:
@@ -111,7 +119,7 @@ class AssuranceModel:
 
     def register_method(self, method: str, level: AssuranceLevel, rationale: str) -> None:
         """
-        Dynamically registers or updates an authentication method.
+        Dynamically registers or updates an authentication method with academic rationale.
         """
         normalized = method.strip().lower()
         self._mapping[normalized] = level
