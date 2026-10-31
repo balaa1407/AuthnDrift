@@ -84,6 +84,17 @@ class PipelineExecutionResult:
                     "session_id": j.session_id,
                     "alert_id": self.alerts[i].alert_id if i < len(self.alerts) else None,
                     "location_context": self._location_context(i),
+                    "context_anomalies": [
+                        {
+                            "source_event_id": anom.source_event_id,
+                            "target_event_id": anom.target_event_id,
+                            "anomaly_type": anom.anomaly_type,
+                            "previous_value": anom.previous_value,
+                            "current_value": anom.current_value,
+                            "lifecycle_stage": anom.lifecycle_stage
+                        }
+                        for anom in getattr(self.alerts[i], "context_anomalies", [])
+                    ] if i < len(self.alerts) else [],
                     "event_count": len(j.events),
                     "start_time": j.events[0].timestamp.isoformat() if j.events else None,
                     "end_time": j.events[-1].timestamp.isoformat() if j.events else None,

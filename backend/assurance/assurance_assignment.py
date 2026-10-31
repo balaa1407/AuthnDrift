@@ -52,17 +52,20 @@ def assign_event_assurance(
 ) -> AuthenticationEvent:
     """
     Assigns effective and attempted assurance according to formal state-machine invariants:
-    - Effective Assurance A_eff(e): Assigned iff event.event_category == AUTHENTICATION and event.outcome == 'SUCCESS'.
-    - Attempted Assurance A_attempted(e): Assigned iff event.event_category == AUTHENTICATION and event.outcome in ['FAILURE', 'ERROR'].
-    - When event.event_category is SESSION_LIFECYCLE or ACCOUNT_LIFECYCLE:
-      A_eff(e) = None and A_attempted(e) = None, because non-interactive token rotations
-      or factor mutations do not execute new factor ceremonies.
+    - Effective Assurance A_eff(e): Assigned iff event.event_category == AUTHENTICATION,
+      event.authentication_method is present, and event.outcome == 'SUCCESS'.
+    - Attempted Assurance A_attempted(e): Assigned iff event.event_category == AUTHENTICATION,
+      event.authentication_method is present, and event.outcome in ['FAILURE', 'ERROR'].
+    - When event.event_category is SESSION_LIFECYCLE or ACCOUNT_LIFECYCLE, or when
+      event.authentication_method is missing:
+      A_eff(e) = None and A_attempted(e) = None, because non-interactive token rotations,
+      factor mutations, or unclassified non-ceremony events do not execute recognized factor ceremonies.
     """
     active_model = model or _DEFAULT_MODEL
     category = getattr(event, "event_category", EventCategory.AUTHENTICATION.value)
     outcome = str(event.outcome or "").strip().upper()
 
-    if category == EventCategory.AUTHENTICATION.value or category == "AUTHENTICATION":
+    if (category == EventCategory.AUTHENTICATION.value or category == "AUTHENTICATION") and event.authentication_method:
         if outcome in ["SUCCESS", "ALLOW"]:
             event.effective_assurance, _ = active_model.get_assurance_level(event.authentication_method)
             event.attempted_assurance = None

@@ -48,6 +48,8 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
     AUTHENTICATION_EVENT_TYPES = {
         "LOGIN",
         "LOGIN_ERROR",
+        "REGISTER",
+        "REGISTER_ERROR",
     }
 
     SESSION_LIFECYCLE_EVENT_TYPES = {
@@ -60,8 +62,6 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
     }
 
     ACCOUNT_LIFECYCLE_EVENT_TYPES = {
-        "REGISTER",
-        "REGISTER_ERROR",
         "REGISTER_AUTHENTICATOR",
         "UPDATE_PASSWORD",
         "UPDATE_PASSWORD_ERROR",
@@ -120,11 +120,17 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
         # 4. Event Type & Orthogonal Event Category Classification
         event_type = str(raw.get("type") or raw.get("eventType") or "LOGIN").strip().upper()
 
-        if event_type in self.SESSION_LIFECYCLE_EVENT_TYPES or "REFRESH" in event_type or "LOGOUT" in event_type:
+        if event_type in self.SESSION_LIFECYCLE_EVENT_TYPES:
             event_category = EventCategory.SESSION_LIFECYCLE.value
-        elif event_type in self.ACCOUNT_LIFECYCLE_EVENT_TYPES or "REGISTER" in event_type or "UPDATE" in event_type or "CREDENTIAL" in event_type:
+        elif event_type in self.ACCOUNT_LIFECYCLE_EVENT_TYPES:
             event_category = EventCategory.ACCOUNT_LIFECYCLE.value
-        elif event_type in self.AUTHENTICATION_EVENT_TYPES or event_type.startswith("LOGIN"):
+        elif event_type in self.AUTHENTICATION_EVENT_TYPES:
+            event_category = EventCategory.AUTHENTICATION.value
+        elif "REFRESH" in event_type or "LOGOUT" in event_type:
+            event_category = EventCategory.SESSION_LIFECYCLE.value
+        elif "CREDENTIAL" in event_type or "FACTOR" in event_type or "PASSWORD" in event_type or event_type.startswith("REGISTER_"):
+            event_category = EventCategory.ACCOUNT_LIFECYCLE.value
+        elif event_type.startswith("LOGIN") or event_type.startswith("AUTH"):
             event_category = EventCategory.AUTHENTICATION.value
         else:
             # Conservative default
@@ -162,9 +168,11 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
                 auth_method = "webauthn"
             elif event_category == EventCategory.SESSION_LIFECYCLE.value:
                 auth_method = "refresh_token"
-            else:
-                # Keycloak default primary credential is password when not specified
+            elif event_type in self.AUTHENTICATION_EVENT_TYPES or event_type.startswith("LOGIN"):
+                # Keycloak default primary credential is password when not specified for login
                 auth_method = "password"
+            else:
+                auth_method = None
 
         # 7. Contextual Fields (preserved cleanly as None if absent, no fabrication)
         device_id = (

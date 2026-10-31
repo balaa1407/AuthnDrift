@@ -33,6 +33,16 @@ function findAlertForJourney(journey) {
   ) || null;
 }
 
+function escapeHtml(val) {
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function formatDate(isoStr) {
   if (!isoStr) return 'N/A';
   try {
@@ -278,13 +288,13 @@ function renderAlertDetails(alert, journey) {
           ${anomalies.map(a => `
             <div class="anomaly-card" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 0.6rem;">
               <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: #f87171;">
-                <span>⚠️ ${a.anomaly_type.replace('_', ' ')}</span>
-                <span style="color: var(--text-muted); font-size: 0.7rem;">${a.lifecycle_stage}</span>
+                <span>⚠️ ${escapeHtml(a.anomaly_type.replace('_', ' '))}</span>
+                <span style="color: var(--text-muted); font-size: 0.7rem;">${escapeHtml(a.lifecycle_stage)}</span>
               </div>
               <div style="font-size: 0.8rem; margin-top: 0.25rem; color: #e2e8f0;">
-                <code>${a.previous_value || 'BASELINE'}</code> ➔ <strong><code>${a.current_value}</code></strong>
+                <code>${escapeHtml(a.previous_value || 'BASELINE')}</code> ➔ <strong><code>${escapeHtml(a.current_value)}</code></strong>
               </div>
-              ${a.target_event_id ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Events: ${a.source_event_id ? '<code>' + a.source_event_id + '</code> ➔ ' : ''}<code>${a.target_event_id}</code></div>` : ''}
+              ${a.target_event_id ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Events: ${a.source_event_id ? '<code>' + escapeHtml(a.source_event_id) + '</code> ➔ ' : ''}<code>${escapeHtml(a.target_event_id)}</code></div>` : ''}
             </div>
           `).join('')}
         </div>
@@ -303,11 +313,11 @@ function renderAlertDetails(alert, journey) {
           ${failedAuths.map(f => `
             <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem;">
               <div style="display: flex; justify-content: space-between;">
-                <span style="font-weight: 600; color: #fbbf24;">❌ ${f.authentication_method || 'Unknown Method'}</span>
+                <span style="font-weight: 600; color: #fbbf24;">❌ ${escapeHtml(f.authentication_method || 'Unknown Method')}</span>
                 <span style="color: var(--text-muted);">${formatDate(f.timestamp)}</span>
               </div>
               <div style="color: var(--text-secondary); margin-top: 0.2rem; font-size: 0.7rem;">
-                ${f.location ? `📍 ${f.location}` : ''} ${f.ip_address ? `🌐 ${f.ip_address}` : ''} ${f.event_id ? `<code>${f.event_id}</code>` : ''}
+                ${f.location ? `📍 ${escapeHtml(f.location)}` : ''} ${f.ip_address ? `🌐 ${escapeHtml(f.ip_address)}` : ''} ${f.event_id ? `<code>${escapeHtml(f.event_id)}</code>` : ''}
               </div>
             </div>
           `).join('')}

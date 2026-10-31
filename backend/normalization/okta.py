@@ -76,6 +76,7 @@ class OktaEventNormalizer(BaseEventNormalizer):
             or event_type_lower.startswith("factor.enroll")
             or event_type_lower.startswith("factor.activate")
             or event_type_lower.startswith("user.credential.enroll")
+            or event_type_lower.startswith("user.account.update_password")
         ):
             event_category = EventCategory.ACCOUNT_LIFECYCLE.value
         elif (
@@ -84,6 +85,7 @@ class OktaEventNormalizer(BaseEventNormalizer):
         ):
             event_category = EventCategory.AUTHENTICATION.value
         else:
+            # Conservative default
             event_category = EventCategory.AUTHENTICATION.value
 
         # 5. Outcome
@@ -110,8 +112,10 @@ class OktaEventNormalizer(BaseEventNormalizer):
                 auth_method = "totp"
             elif "factor.activate" in event_type_lower:
                 auth_method = "webauthn"
-            else:
+            elif event_type_lower.startswith("user.authentication.") or event_type_lower.startswith("user.session.start"):
                 auth_method = "password"
+            else:
+                auth_method = None
 
         # 7. Contextual Signals
         client = raw.get("client") if isinstance(raw.get("client"), dict) else {}

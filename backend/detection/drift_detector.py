@@ -14,6 +14,7 @@ from backend.assurance.assurance_model import AssuranceModel
 from backend.assurance.assurance_assignment import assign_event_assurance
 from backend.detection.detection_rules import (
     DriftDetectionConfig,
+    RULE_CROSS_CEREMONY_DOWNGRADE,
     RULE_DOWNGRADE_GENERAL,
     RULE_FAILED_STRONG_SUCCESS_WEAK,
     RULE_MULTI_FAILURE_FALLBACK,
@@ -129,7 +130,6 @@ class DriftDetector:
 
         for current_event in auth_events:
             current_method = current_event.authentication_method
-            current_assurance, is_recognized = self.assurance_model.get_assurance_level(current_method)
             current_is_failure = _is_failure_outcome(current_event.outcome)
 
             if current_is_failure:
@@ -141,70 +141,82 @@ class DriftDetector:
             # Current event is a SUCCESS!
             # Evaluate against pending failures (failed strong followed by weaker fallback - Rule A)
             if pending_failures:
-                # Find the strongest method among pending failures
-                strongest_failed_event = max(
-                    pending_failures,
-                    key=lambda f: self.assurance_model.get_assurance_level(f.authentication_method)[0].value
-                )
-                strongest_failed_assurance, failed_is_rec = self.assurance_model.get_assurance_level(
-                    strongest_failed_event.authentication_method
-                )
-
-                assurance_drop = strongest_failed_assurance.value - current_assurance.value
-
-                if assurance_drop >= self.config.min_assurance_drop:
-                    # Confirmed downgrade: weaker method succeeded after stronger method failed
-                    unknown_notes = []
-                    if not failed_is_rec:
-                        unknown_notes.append(f"'{strongest_failed_event.authentication_method}' is an unknown method evaluated defensively as LOW assurance")
-                    if not is_recognized:
-                        unknown_notes.append(f"'{current_method}' is an unknown method evaluated defensively as LOW assurance")
-                    unknown_suffix = f" (Note: {'; '.join(unknown_notes)})." if unknown_notes else ""
-
-                    if len(pending_failures) > 1:
-                        transition_type = RULE_MULTI_FAILURE_FALLBACK
-                        reason = (
-                            f"Multiple failed authentication attempts ({len(pending_failures)}) including stronger method "
-                            f"'{strongest_failed_event.authentication_method}' ({strongest_failed_assurance.name}) "
-                            f"followed by successful fallback to lower-assurance method '{current_method}' "
-                            f"({current_assurance.name}){unknown_suffix}."
-                        )
-                    else:
-                        transition_type = RULE_FAILED_STRONG_SUCCESS_WEAK
-                        reason = (
-                            f"Failed strong authentication ({strongest_failed_event.authentication_method} - {strongest_failed_assurance.name}) "
-                            f"followed by successful fallback to lower-assurance method "
-                            f"({current_method} - {current_assurance.name}){unknown_suffix}."
-                        )
-
-                    detected_drift = DriftResult(
-                        drift_detected=True,
-                        reason=reason,
-                        previous_method=strongest_failed_event.authentication_method,
-                        previous_assurance=strongest_failed_assurance,
-                        current_method=current_method,
-                        current_assurance=current_assurance,
-                        transition_type=transition_type,
-                        source_event_id=strongest_failed_event.event_id,
-                        target_event_id=current_event.event_id
+                # Find the strongest method among pending failures that has attempted assurance
+                valid_failures = [f for f in pending_failures if f.attempted_assurance is not None]
+                if valid_failures and current_event.effective_assurance is not None:
+                    strongest_failed_event = max(
+                        valid_failures,
+                        key=lambda f: f.attempted_assurance.value
                     )
-                elif current_assurance.value > strongest_failed_assurance.value:
-                    step_up_observed = True
+                    strongest_failed_assurance = strongest_failed_event.attempted_assurance
+                    current_assurance_eff = current_event.effective_assurance
+
+                    assurance_drop = strongest_failed_assurance.value - current_assurance_eff.value
+
+                    if assurance_drop >= self.config.min_assurance_drop:
+                        _, is_recognized = self.assurance_model.get_assurance_level(current_method)
+                        _, failed_is_rec = self.assurance_model.get_assurance_level(
+                            strongest_failed_event.authentication_method
+                        )
+                        unknown_notes = []
+                        if not failed_is_rec:
+                            unknown_notes.append(f"'{strongest_failed_event.authentication_method}' is an unknown method evaluated defensively as LOW assurance")
+                        if not is_recognized:
+                            unknown_notes.append(f"'{current_method}' is an unknown method evaluated defensively as LOW assurance")
+                        unknown_suffix = f" (Note: {'; '.join(unknown_notes)})." if unknown_notes else ""
+
+                        if len(pending_failures) > 1:
+                            transition_type = RULE_MULTI_FAILURE_FALLBACK
+                            reason = (
+                                f"Multiple failed authentication attempts ({len(pending_failures)}) including stronger method "
+                                f"'{strongest_failed_event.authentication_method}' ({strongest_failed_assurance.name}) "
+                                f"followed by successful fallback to lower-assurance method '{current_method}' "
+                                f"({current_assurance_eff.name}){unknown_suffix}."
+                            )
+                        else:
+                            transition_type = RULE_FAILED_STRONG_SUCCESS_WEAK
+                            reason = (
+                                f"Failed strong authentication ({strongest_failed_event.authentication_method} - {strongest_failed_assurance.name}) "
+                                f"followed by successful fallback to lower-assurance method "
+                                f"({current_method} - {current_assurance_eff.name}){unknown_suffix}."
+                            )
+
+                        detected_drift = DriftResult(
+                            drift_detected=True,
+                            reason=reason,
+                            previous_method=strongest_failed_event.authentication_method,
+                            previous_assurance=strongest_failed_assurance,
+                            current_method=current_method,
+                            current_assurance=current_assurance_eff,
+                            transition_type=transition_type,
+                            source_event_id=strongest_failed_event.event_id,
+                            target_event_id=current_event.event_id
+                        )
+                    elif current_assurance_eff.value > strongest_failed_assurance.value:
+                        step_up_observed = True
 
                 # Attempt concluded with a success; clear pending failures
                 pending_failures.clear()
 
             else:
-                # No pending failure: consecutive successful authentications (Rule B)
-                if last_successful_event:
-                    last_assurance, last_is_rec = self.assurance_model.get_assurance_level(
-                        last_successful_event.authentication_method
-                    )
-                    if current_assurance.value > last_assurance.value:
+                # No pending failure: consecutive successful authentications (Rule B / Cross-Ceremony Step-Down)
+                if (
+                    last_successful_event
+                    and last_successful_event.effective_assurance is not None
+                    and current_event.effective_assurance is not None
+                ):
+                    last_assurance = last_successful_event.effective_assurance
+                    current_assurance_eff = current_event.effective_assurance
+
+                    if current_assurance_eff.value > last_assurance.value:
                         step_up_observed = True
-                    elif current_assurance.value < last_assurance.value:
-                        assurance_drop = last_assurance.value - current_assurance.value
+                    elif current_assurance_eff.value < last_assurance.value:
+                        assurance_drop = last_assurance.value - current_assurance_eff.value
                         if assurance_drop >= self.config.min_assurance_drop and self.config.detect_any_downgrade and not self.config.require_prior_failure:
+                            _, is_recognized = self.assurance_model.get_assurance_level(current_method)
+                            _, last_is_rec = self.assurance_model.get_assurance_level(
+                                last_successful_event.authentication_method
+                            )
                             unknown_notes = []
                             if not last_is_rec:
                                 unknown_notes.append(f"'{last_successful_event.authentication_method}' is an unknown method evaluated defensively as LOW assurance")
@@ -215,15 +227,15 @@ class DriftDetector:
                             detected_drift = DriftResult(
                                 drift_detected=True,
                                 reason=(
-                                    f"Authentication assurance decreased from {last_assurance.name} "
-                                    f"({last_successful_event.authentication_method}) to {current_assurance.name} "
+                                    f"Cross-ceremony policy drift (Rule B): Authentication assurance decreased from {last_assurance.name} "
+                                    f"({last_successful_event.authentication_method}) to {current_assurance_eff.name} "
                                     f"({current_method}){unknown_suffix}."
                                 ),
                                 previous_method=last_successful_event.authentication_method,
                                 previous_assurance=last_assurance,
                                 current_method=current_method,
-                                current_assurance=current_assurance,
-                                transition_type=RULE_DOWNGRADE_GENERAL,
+                                current_assurance=current_assurance_eff,
+                                transition_type=RULE_CROSS_CEREMONY_DOWNGRADE,
                                 source_event_id=last_successful_event.event_id,
                                 target_event_id=current_event.event_id
                             )
