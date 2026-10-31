@@ -1,13 +1,14 @@
 """
 AuthDrift: Keycloak Event Normalizer.
 Converts raw Keycloak user event logs (from REST API or JBoss Event Listener)
-into the normalized AuthenticationEvent schema.
+into the normalized AuthenticationEvent schema with orthogonal event classification.
 """
 
 from typing import Any, Dict, Optional
 import uuid
-from backend.models.event import AuthenticationEvent
+from backend.models.event import AuthenticationEvent, EventCategory
 from backend.normalization.base import BaseEventNormalizer
+from backend.assurance.assurance_assignment import assign_event_assurance
 
 
 class KeycloakEventNormalizer(BaseEventNormalizer):
@@ -15,6 +16,8 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
     Normalizes Keycloak user authentication and registration events.
     Handles standard Keycloak 20+ event schemas with graceful fallbacks.
     Separates IP address from geographic location strictly without fabrication.
+    Enforces orthogonal event classification between authentication ceremonies,
+    session lifecycle events, and account factor mutations.
     """
 
     METHOD_MAPPING = {
@@ -39,11 +42,41 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
         "pin": "pin",
         "secret": "password",
         "knowledge_based": "knowledge_based",
+        "refresh_token": "refresh_token",
+    }
+
+    AUTHENTICATION_EVENT_TYPES = {
+        "LOGIN",
+        "LOGIN_ERROR",
+    }
+
+    SESSION_LIFECYCLE_EVENT_TYPES = {
+        "REFRESH_TOKEN",
+        "REFRESH_TOKEN_ERROR",
+        "CODE_TO_TOKEN",
+        "CODE_TO_TOKEN_ERROR",
+        "LOGOUT",
+        "SESSION_LOGOUT",
+    }
+
+    ACCOUNT_LIFECYCLE_EVENT_TYPES = {
+        "REGISTER",
+        "REGISTER_ERROR",
+        "REGISTER_AUTHENTICATOR",
+        "UPDATE_PASSWORD",
+        "UPDATE_PASSWORD_ERROR",
+        "UPDATE_TOTP",
+        "UPDATE_CREDENTIAL",
+        "DELETE_CREDENTIAL",
+        "CREDENTIAL_REGISTER",
+        "FEDERATED_IDENTITY_LINK",
+        "FEDERATED_IDENTITY_LINK_ERROR",
     }
 
     SUCCESS_EVENT_TYPES = {
         "LOGIN",
         "REGISTER",
+        "REFRESH_TOKEN",
         "CODE_TO_TOKEN",
         "UPDATE_PASSWORD",
         "FEDERATED_IDENTITY_LINK",
@@ -53,6 +86,7 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
     FAILURE_EVENT_TYPES = {
         "LOGIN_ERROR",
         "REGISTER_ERROR",
+        "REFRESH_TOKEN_ERROR",
         "CODE_TO_TOKEN_ERROR",
         "UPDATE_PASSWORD_ERROR",
         "FEDERATED_IDENTITY_LINK_ERROR",
@@ -83,19 +117,29 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
             or "unknown_user"
         ).strip()
 
-        # 4. Event Type
+        # 4. Event Type & Orthogonal Event Category Classification
         event_type = str(raw.get("type") or raw.get("eventType") or "LOGIN").strip().upper()
+
+        if event_type in self.SESSION_LIFECYCLE_EVENT_TYPES or "REFRESH" in event_type or "LOGOUT" in event_type:
+            event_category = EventCategory.SESSION_LIFECYCLE.value
+        elif event_type in self.ACCOUNT_LIFECYCLE_EVENT_TYPES or "REGISTER" in event_type or "UPDATE" in event_type or "CREDENTIAL" in event_type:
+            event_category = EventCategory.ACCOUNT_LIFECYCLE.value
+        elif event_type in self.AUTHENTICATION_EVENT_TYPES or event_type.startswith("LOGIN"):
+            event_category = EventCategory.AUTHENTICATION.value
+        else:
+            # Conservative default
+            event_category = EventCategory.AUTHENTICATION.value
 
         # 5. Outcome determination
         explicit_outcome = raw.get("outcome") or details.get("outcome")
         if explicit_outcome:
             outcome = "SUCCESS" if str(explicit_outcome).strip().upper() in ["SUCCESS", "ALLOW"] else "FAILURE"
+        elif event_type in self.FAILURE_EVENT_TYPES or event_type.endswith("_ERROR"):
+            outcome = "FAILURE"
         elif event_type in self.SUCCESS_EVENT_TYPES:
             outcome = "SUCCESS"
-        elif event_type in self.FAILURE_EVENT_TYPES:
-            outcome = "FAILURE"
         else:
-            # Check for error field in details
+            # Check for error field in details or raw
             outcome = "FAILURE" if ("error" in details or "error" in raw) else "SUCCESS"
 
         # 6. Authentication Method extraction
@@ -112,12 +156,12 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
             method_clean = str(auth_method_raw).strip().lower()
             auth_method = self.METHOD_MAPPING.get(method_clean, method_clean)
         else:
-            # If method is missing:
-            # If registration of webauthn/passkey
             if "webauthn" in str(event_type).lower():
                 auth_method = "passkey"
             elif event_type == "REGISTER_AUTHENTICATOR":
                 auth_method = "webauthn"
+            elif event_category == EventCategory.SESSION_LIFECYCLE.value:
+                auth_method = "refresh_token"
             else:
                 # Keycloak default primary credential is password when not specified
                 auth_method = "password"
@@ -177,7 +221,7 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
         else:
             session_id = None
 
-        return AuthenticationEvent(
+        event = AuthenticationEvent(
             event_id=event_id,
             user_id=user_id,
             timestamp=timestamp,
@@ -189,5 +233,10 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
             ip_address=ip_address,
             authenticator_id=authenticator_id,
             session_id=session_id,
-            source_provider="keycloak"
+            source_provider="keycloak",
+            event_category=event_category
         )
+
+        # Annotate domain-restricted assurance levels
+        assign_event_assurance(event)
+        return event

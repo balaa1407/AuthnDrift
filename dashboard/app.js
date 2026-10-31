@@ -2,7 +2,7 @@
  * AuthDrift Frontend Application
  * Interacts with AuthDrift FastAPI backend to render:
  * A. Authentication Overview Metrics
- * B. Authentication Journey Timelines with IP & Context separation
+ * B. Authentication Journey Timelines with IP, Context, and Lifecycle Stage separation
  * C. Explainable Security Intelligence & Alerts (Drift vs. Contextual Anomaly)
  * D. Filtering, Scenario Switching & Raw Log Ingestion
  */
@@ -135,8 +135,23 @@ function renderJourneys(filteredJourneys) {
 
     let stepsHtml = '';
     journey.events.forEach(ev => {
-      const assurance = getAssuranceLevel(ev.authentication_method);
       const isSuccess = ev.outcome === 'SUCCESS';
+      const category = ev.event_category || 'AUTHENTICATION';
+
+      // Domain-restricted assurance representation
+      let assuranceBadge = '';
+      if (ev.effective_assurance) {
+        assuranceBadge = `<span class="badge-assurance assurance-${ev.effective_assurance.toLowerCase()}">${ev.effective_assurance}</span>`;
+      } else if (ev.attempted_assurance) {
+        assuranceBadge = `<span class="badge-assurance assurance-${ev.attempted_assurance.toLowerCase()}" title="Attempted (Failed)">${ev.attempted_assurance} (Att)</span>`;
+      } else if (category === 'SESSION_LIFECYCLE') {
+        assuranceBadge = `<span class="badge-assurance" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8;" title="Non-interactive session lifecycle">SESSION</span>`;
+      } else if (category === 'ACCOUNT_LIFECYCLE') {
+        assuranceBadge = `<span class="badge-assurance" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8;" title="Account factor mutation">ACCOUNT</span>`;
+      } else {
+        const rawAssurance = getAssuranceLevel(ev.authentication_method);
+        assuranceBadge = `<span class="badge-assurance assurance-${rawAssurance.toLowerCase()}">${rawAssurance}</span>`;
+      }
 
       let contextTagsHtml = '';
       if (ev.device_id) {
@@ -158,7 +173,8 @@ function renderJourneys(filteredJourneys) {
       stepsHtml += `
         <div class="timeline-step ${isSuccess ? 'step-success' : 'step-failure'}">
           <div class="step-left">
-            <span class="badge-assurance assurance-${assurance.toLowerCase()}">${assurance}</span>
+            <span class="badge-category" style="font-size: 0.65rem; background: rgba(255, 255, 255, 0.08); padding: 2px 6px; border-radius: 4px; color: var(--text-muted);">${category}</span>
+            ${assuranceBadge}
             <span class="step-method">${ev.authentication_method}</span>
             <span class="badge-outcome outcome-${isSuccess ? 'success' : 'failure'}">${ev.outcome}</span>
             <div class="step-context">${contextTagsHtml}</div>
@@ -172,9 +188,12 @@ function renderJourneys(filteredJourneys) {
     if (hasDrift && matchedAlert?.drift_result) {
       const prev = matchedAlert.drift_result.previous_assurance || 'HIGH';
       const curr = matchedAlert.drift_result.current_assurance || 'LOW';
+      const transitionCitation = (matchedAlert.source_event_id && matchedAlert.target_event_id)
+        ? ` &bull; <code>${matchedAlert.source_event_id} ➔ ${matchedAlert.target_event_id}</code>`
+        : '';
       driftBanner = `
         <div class="drift-transition-banner">
-          <span>⚠️ <strong>Assurance Drift:</strong> ${prev} ➔ ${curr} (${matchedAlert.drift_result.transition_type || 'DOWNGRADE'})</span>
+          <span>⚠️ <strong>Assurance Drift:</strong> ${prev} ➔ ${curr} (${matchedAlert.drift_result.transition_type || 'DOWNGRADE'})${transitionCitation}</span>
         </div>
       `;
     }
@@ -248,6 +267,55 @@ function renderAlertDetails(alert, journey) {
     factorListHtml = `<li class="factor-item" style="color: var(--text-muted);">No elevated risk factors triggered.</li>`;
   }
 
+  // Structured Contextual Anomalies rendering
+  let anomaliesHtml = '';
+  const anomalies = alert.context_anomalies || evidence.context_anomalies || [];
+  if (anomalies.length > 0) {
+    anomaliesHtml = `
+      <div>
+        <h4 class="section-title">Contextual Anomalies & Telemetry Deltas (${anomalies.length})</h4>
+        <div class="anomalies-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
+          ${anomalies.map(a => `
+            <div class="anomaly-card" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 0.6rem;">
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: #f87171;">
+                <span>⚠️ ${a.anomaly_type.replace('_', ' ')}</span>
+                <span style="color: var(--text-muted); font-size: 0.7rem;">${a.lifecycle_stage}</span>
+              </div>
+              <div style="font-size: 0.8rem; margin-top: 0.25rem; color: #e2e8f0;">
+                <code>${a.previous_value || 'BASELINE'}</code> ➔ <strong><code>${a.current_value}</code></strong>
+              </div>
+              ${a.target_event_id ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Events: ${a.source_event_id ? '<code>' + a.source_event_id + '</code> ➔ ' : ''}<code>${a.target_event_id}</code></div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Structured Failed Authentications rendering
+  let failedAuthHtml = '';
+  const failedAuths = alert.failed_authentications || [];
+  if (failedAuths.length > 0) {
+    failedAuthHtml = `
+      <div>
+        <h4 class="section-title">Failed Authentication Attempts (${failedAuths.length})</h4>
+        <div class="failed-auths-list" style="display: flex; flex-direction: column; gap: 0.4rem;">
+          ${failedAuths.map(f => `
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 0.5rem; font-size: 0.75rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <span style="font-weight: 600; color: #fbbf24;">❌ ${f.authentication_method || 'Unknown Method'}</span>
+                <span style="color: var(--text-muted);">${formatDate(f.timestamp)}</span>
+              </div>
+              <div style="color: var(--text-secondary); margin-top: 0.2rem; font-size: 0.7rem;">
+                ${f.location ? `📍 ${f.location}` : ''} ${f.ip_address ? `🌐 ${f.ip_address}` : ''} ${f.event_id ? `<code>${f.event_id}</code>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   const alertType = alert.alert_type || (alert.drift_detected ? 'ASSURANCE_DRIFT' : 'INFORMATIONAL');
   let alertTypeClass = 'alert-type-info';
   if (alertType === 'ASSURANCE_DRIFT') alertTypeClass = 'alert-type-drift';
@@ -278,6 +346,7 @@ function renderAlertDetails(alert, journey) {
             ${drift.previous_method || 'None'}
             ${drift.previous_assurance ? `(${drift.previous_assurance})` : ''}
           </span>
+          ${alert.source_event_id ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">Event: <code>${alert.source_event_id}</code></span>` : ''}
         </div>
         <div class="transition-arrow">➔</div>
         <div class="transition-node">
@@ -286,11 +355,12 @@ function renderAlertDetails(alert, journey) {
             ${drift.current_method || 'None'}
             ${drift.current_assurance ? `(${drift.current_assurance})` : ''}
           </span>
+          ${alert.target_event_id ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">Event: <code>${alert.target_event_id}</code></span>` : ''}
         </div>
       </div>
       <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
         <strong>Detection Rule:</strong> <code>${drift.transition_type || 'NORMAL_JOURNEY'}</code> &bull;
-        <strong>Status:</strong> ${alert.drift_detected ? '<span style="color: #fda4af; font-weight: 700;">DRIFT DETECTED</span>' : '<span style="color: #34d399; font-weight: 700;">NO DRIFT</span>'}
+        <strong>Status:</strong> ${alert.drift_detected ? '<span style="color: #fda4af; font-weight: 700;">DRIFT DETECTED</span>' : '<span style="color: #34d399; font-weight: 700;">NO DRIFT DETECTED</span>'}
       </div>
     </div>
 
@@ -300,6 +370,10 @@ function renderAlertDetails(alert, journey) {
         ${alert.explanation}
       </div>
     </div>
+
+    ${anomaliesHtml}
+
+    ${failedAuthHtml}
 
     <div>
       <h4 class="section-title">Contextual Evidence & Baselines</h4>

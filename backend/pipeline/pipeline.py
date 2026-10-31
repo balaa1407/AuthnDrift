@@ -20,6 +20,7 @@ from backend.normalization.okta import OktaEventNormalizer
 from backend.normalization.deduplicator import EventDeduplicator
 from backend.journey.reconstructor import JourneyReconstructor
 from backend.correlation.location_profiler import LocationProfiler
+from backend.assurance.assurance_assignment import assign_event_assurance
 
 
 @dataclass
@@ -63,7 +64,10 @@ class PipelineExecutionResult:
                     "user_id": e.user_id,
                     "timestamp": e.timestamp.isoformat() if e.timestamp else None,
                     "event_type": e.event_type,
+                    "event_category": getattr(e, "event_category", "AUTHENTICATION"),
                     "authentication_method": e.authentication_method,
+                    "effective_assurance": e.effective_assurance.name if e.effective_assurance else None,
+                    "attempted_assurance": e.attempted_assurance.name if e.attempted_assurance else None,
                     "outcome": e.outcome,
                     "device_id": e.device_id,
                     "location": e.location,
@@ -89,7 +93,10 @@ class PipelineExecutionResult:
                             "user_id": e.user_id,
                             "timestamp": e.timestamp.isoformat() if e.timestamp else None,
                             "event_type": e.event_type,
+                            "event_category": getattr(e, "event_category", "AUTHENTICATION"),
                             "authentication_method": e.authentication_method,
+                            "effective_assurance": e.effective_assurance.name if e.effective_assurance else None,
+                            "attempted_assurance": e.attempted_assurance.name if e.attempted_assurance else None,
                             "outcome": e.outcome,
                             "device_id": e.device_id,
                             "location": e.location,
@@ -111,9 +118,23 @@ class PipelineExecutionResult:
                     "alert_type": getattr(a, "alert_type", "INFORMATIONAL"),
                     "priority": getattr(a, "priority", "INFORMATIONAL"),
                     "is_actionable": a.is_actionable,
+                    "source_event_id": getattr(a, "source_event_id", None),
+                    "target_event_id": getattr(a, "target_event_id", None),
                     "methods_involved": a.methods_involved,
                     "explanation": a.explanation,
                     "session_id": a.session_id,
+                    "context_anomalies": [
+                        {
+                            "source_event_id": anom.source_event_id,
+                            "target_event_id": anom.target_event_id,
+                            "anomaly_type": anom.anomaly_type,
+                            "previous_value": anom.previous_value,
+                            "current_value": anom.current_value,
+                            "lifecycle_stage": anom.lifecycle_stage
+                        }
+                        for anom in getattr(a, "context_anomalies", [])
+                    ],
+                    "failed_authentications": getattr(a, "failed_authentications", []),
                     "drift_result": {
                         "drift_detected": a.drift_result.drift_detected,
                         "reason": a.drift_result.reason,
@@ -121,7 +142,9 @@ class PipelineExecutionResult:
                         "previous_assurance": a.drift_result.previous_assurance.name if a.drift_result.previous_assurance else None,
                         "current_method": a.drift_result.current_method,
                         "current_assurance": a.drift_result.current_assurance.name if a.drift_result.current_assurance else None,
-                        "transition_type": a.drift_result.transition_type
+                        "transition_type": a.drift_result.transition_type,
+                        "source_event_id": a.drift_result.source_event_id,
+                        "target_event_id": a.drift_result.target_event_id
                     },
                     "context_evidence": {
                         "is_new_device": a.context_evidence.is_new_device,
@@ -134,7 +157,18 @@ class PipelineExecutionResult:
                         "authenticator_registered": a.context_evidence.authenticator_registered,
                         "authenticator_id": a.context_evidence.authenticator_id,
                         "prior_failures_count": a.context_evidence.prior_failures_count,
-                        "evidence_notes": a.context_evidence.evidence_notes
+                        "evidence_notes": a.context_evidence.evidence_notes,
+                        "context_anomalies": [
+                            {
+                                "source_event_id": anom.source_event_id,
+                                "target_event_id": anom.target_event_id,
+                                "anomaly_type": anom.anomaly_type,
+                                "previous_value": anom.previous_value,
+                                "current_value": anom.current_value,
+                                "lifecycle_stage": anom.lifecycle_stage
+                            }
+                            for anom in getattr(a.context_evidence, "context_anomalies", [])
+                        ]
                     },
                     "risk_assessment": {
                         "score": a.risk_assessment.score,
@@ -204,6 +238,11 @@ class AuthDriftPipeline:
 
         # 1. Normalization
         normalized = normalizer.normalize_batch(raw_events)
+
+        # Ensure all events have domain-restricted assurance assigned
+        for e in normalized:
+            if e.effective_assurance is None and e.attempted_assurance is None:
+                assign_event_assurance(e)
 
         # 2. Deduplication
         if deduplicate:

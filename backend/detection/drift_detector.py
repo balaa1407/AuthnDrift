@@ -1,15 +1,17 @@
 """
 AuthDrift: Core Drift Detection Engine.
 Analyses reconstructed authentication journeys and flags assurance downgrades
-with explicit chronological transition logic and supporting empirical evidence.
+with explicit chronological transition logic, pure state-machine invariants,
+and supporting empirical evidence.
 """
 
 from datetime import datetime
 from typing import List, Optional, Set
-from backend.models.event import AuthenticationEvent
+from backend.models.event import AuthenticationEvent, EventCategory
 from backend.models.detection import DriftResult
 from backend.models.assurance import AssuranceLevel
 from backend.assurance.assurance_model import AssuranceModel
+from backend.assurance.assurance_assignment import assign_event_assurance
 from backend.detection.detection_rules import (
     DriftDetectionConfig,
     RULE_DOWNGRADE_GENERAL,
@@ -19,8 +21,8 @@ from backend.detection.detection_rules import (
     RULE_STEP_UP_AUTHENTICATION
 )
 
-# Lifecycle events that represent credential management or session control,
-# not direct authentication challenges. These participate in contextual correlation, not drift detection.
+# Lifecycle events representing credential management or session control.
+# These participate in contextual correlation, not assurance drift detection.
 LIFECYCLE_EVENT_TYPES: Set[str] = {
     "REGISTER_AUTHENTICATOR",
     "UPDATE_CREDENTIAL",
@@ -31,6 +33,10 @@ LIFECYCLE_EVENT_TYPES: Set[str] = {
     "USER.MFA.FACTOR.ACTIVATE",
     "FACTOR.ENROLL",
     "USER.CREDENTIAL.ENROLL",
+    "REFRESH_TOKEN",
+    "REFRESH_TOKEN_ERROR",
+    "CODE_TO_TOKEN",
+    "CODE_TO_TOKEN_ERROR",
 }
 
 
@@ -43,15 +49,21 @@ def _is_failure_outcome(outcome: Optional[str]) -> bool:
 
 class DriftDetector:
     """
-    Evaluates authentication journeys for assurance drift using chronological transition logic.
+    Evaluates authentication journeys for assurance drift using strict state-machine logic.
 
     Guarantees:
-    - Events evaluated in timestamp order.
-    - Downgrades flagged only when a weaker method succeeds after a stronger method failed,
-      or when an explicit downgrade occurs across established sessions.
+    - Events evaluated in strict chronological timestamp order.
+    - Only interactive authentication ceremonies (event_category == AUTHENTICATION)
+      enter the assurance-level comparison domain.
+    - Session lifecycle events (e.g. REFRESH_TOKEN) and factor mutations never enter
+      assurance comparison and cannot be downgrade targets.
+    - Downgrades flagged only when a weaker method succeeds after a stronger method failed
+      (Active Fallback Downgrade / Rule A), or when an explicit cross-ceremony downgrade occurs
+      between consecutive successful authentications (Rule B).
     - Repeated failures alone are never labeled as assurance drift.
     - Step-up authentications are recognized as legitimate security enhancements, not downgrades.
     - Unknown authentication methods are conservatively assigned to LOW and made explicit.
+    - The drift result explicitly cites source_event_id and target_event_id.
     """
 
     def __init__(
@@ -89,10 +101,17 @@ class DriftDetector:
                 seen_ids.add(event.event_id)
             deduped_journey.append(event)
 
-        # 3. Filter out non-authentication lifecycle events (e.g. authenticator registration)
+        # 3. Defensive assurance domain annotation for events
+        for event in deduped_journey:
+            if event.effective_assurance is None and event.attempted_assurance is None:
+                assign_event_assurance(event, self.assurance_model)
+
+        # 4. Filter for interactive authentication events only
+        # Session lifecycle events (REFRESH_TOKEN) and factor mutations are excluded from assurance comparison.
         auth_events = [
             e for e in deduped_journey
-            if str(e.event_type or "").strip().upper() not in LIFECYCLE_EVENT_TYPES
+            if getattr(e, "event_category", EventCategory.AUTHENTICATION.value) == EventCategory.AUTHENTICATION.value
+            and str(e.event_type or "").strip().upper() not in LIFECYCLE_EVENT_TYPES
         ]
 
         if len(auth_events) < 2:
@@ -101,7 +120,7 @@ class DriftDetector:
                 reason="Insufficient authentication events in journey to detect drift (minimum 2 required)."
             )
 
-        # 4. State tracking for chronological transition evaluation
+        # 5. State tracking for chronological transition evaluation
         pending_failures: List[AuthenticationEvent] = []
         last_successful_event: Optional[AuthenticationEvent] = None
         detected_drift: Optional[DriftResult] = None
@@ -120,7 +139,7 @@ class DriftDetector:
                 continue
 
             # Current event is a SUCCESS!
-            # Evaluate against pending failures (failed strong followed by weaker fallback)
+            # Evaluate against pending failures (failed strong followed by weaker fallback - Rule A)
             if pending_failures:
                 # Find the strongest method among pending failures
                 strongest_failed_event = max(
@@ -165,7 +184,9 @@ class DriftDetector:
                         previous_assurance=strongest_failed_assurance,
                         current_method=current_method,
                         current_assurance=current_assurance,
-                        transition_type=transition_type
+                        transition_type=transition_type,
+                        source_event_id=strongest_failed_event.event_id,
+                        target_event_id=current_event.event_id
                     )
                 elif current_assurance.value > strongest_failed_assurance.value:
                     step_up_observed = True
@@ -174,7 +195,7 @@ class DriftDetector:
                 pending_failures.clear()
 
             else:
-                # No pending failure: consecutive successful authentications
+                # No pending failure: consecutive successful authentications (Rule B)
                 if last_successful_event:
                     last_assurance, last_is_rec = self.assurance_model.get_assurance_level(
                         last_successful_event.authentication_method
@@ -202,12 +223,14 @@ class DriftDetector:
                                 previous_assurance=last_assurance,
                                 current_method=current_method,
                                 current_assurance=current_assurance,
-                                transition_type=RULE_DOWNGRADE_GENERAL
+                                transition_type=RULE_DOWNGRADE_GENERAL,
+                                source_event_id=last_successful_event.event_id,
+                                target_event_id=current_event.event_id
                             )
 
             last_successful_event = current_event
 
-        # 5. Return evaluation outcome
+        # 6. Return evaluation outcome
         if detected_drift:
             return detected_drift
 

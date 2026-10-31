@@ -1,13 +1,13 @@
 """
 AuthDrift: Explainable Alert Generator.
 Produces human-readable and machine-readable explainable security alerts
-derived strictly from empirical journey evidence.
+derived strictly from empirical journey evidence and formal state-machine logic.
 Distinguishes ASSURANCE_DRIFT from CONTEXTUAL_ANOMALY.
 """
 
 import uuid
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from backend.models.event import AuthenticationEvent
 from backend.models.detection import (
     DriftResult,
@@ -22,6 +22,8 @@ class AlertGenerator:
     """
     Generates explainable, verifiable security alerts.
     Never invents contextual details; strictly adheres to evidence present.
+    Explicitly links qualifying source and target events and records discrete
+    context anomalies and failed authentications.
     """
 
     def generate_alert(
@@ -40,9 +42,26 @@ class AlertGenerator:
         # Preserve chronological ordering when reporting distinct methods
         unique_methods_ordered = list(dict.fromkeys(methods_involved))
 
+        # Collect discrete failed authentications
+        failed_authentications: List[Dict[str, Any]] = [
+            {
+                "event_id": e.event_id,
+                "event_type": e.event_type,
+                "authentication_method": e.authentication_method,
+                "timestamp": e.timestamp.isoformat() if e.timestamp else None,
+                "location": e.location,
+                "ip_address": e.ip_address,
+                "device_id": e.device_id,
+                "lifecycle_stage": getattr(e, "event_category", "AUTHENTICATION"),
+            }
+            for e in journey
+            if e.outcome and str(e.outcome).strip().upper() in ["FAILURE", "FAILED", "ERROR"]
+        ]
+
         # Classify alert type
         has_context_anomaly = (
-            context_evidence.is_new_device is True
+            bool(context_evidence.context_anomalies)
+            or context_evidence.is_new_device is True
             or context_evidence.is_location_changed is True
             or context_evidence.authenticator_registered is True
             or context_evidence.prior_failures_count >= 2
@@ -55,6 +74,17 @@ class AlertGenerator:
             alert_type = "CONTEXTUAL_ANOMALY"
         else:
             alert_type = "INFORMATIONAL"
+
+        # Determine source and target event references
+        if drift_result.drift_detected:
+            source_event_id = drift_result.source_event_id
+            target_event_id = drift_result.target_event_id
+        elif context_evidence.context_anomalies:
+            source_event_id = context_evidence.context_anomalies[0].source_event_id
+            target_event_id = context_evidence.context_anomalies[0].target_event_id
+        else:
+            source_event_id = None
+            target_event_id = None
 
         # Generate narrative explanation
         explanation_parts: List[str] = []
@@ -97,6 +127,10 @@ class AlertGenerator:
         if context_evidence.ip_address:
             context_notes.append(f"observed IP address: {context_evidence.ip_address}")
 
+        if context_evidence.context_anomalies:
+            anomaly_descriptions = [f"{a.anomaly_type} ({a.previous_value or 'None'} -> {a.current_value})" for a in context_evidence.context_anomalies]
+            context_notes.append(f"telemetry deltas: {', '.join(anomaly_descriptions)}")
+
         if context_notes:
             explanation_parts.append(f"Contextual Signals: Identified {', '.join(context_notes)}.")
 
@@ -138,5 +172,9 @@ class AlertGenerator:
             is_actionable=is_actionable,
             session_id=session_id or (journey[0].session_id if journey else None),
             priority=priority,
-            alert_type=alert_type
+            alert_type=alert_type,
+            source_event_id=source_event_id,
+            target_event_id=target_event_id,
+            context_anomalies=context_evidence.context_anomalies,
+            failed_authentications=failed_authentications
         )

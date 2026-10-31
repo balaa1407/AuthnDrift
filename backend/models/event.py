@@ -5,7 +5,18 @@ Represents vendor-neutral normalized authentication events.
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
+from backend.models.assurance import AssuranceLevel
+
+
+class EventCategory(str, Enum):
+    """
+    Formal classification of event lifecycle stages derived strictly from IdP schemas.
+    """
+    AUTHENTICATION = "AUTHENTICATION"
+    SESSION_LIFECYCLE = "SESSION_LIFECYCLE"
+    ACCOUNT_LIFECYCLE = "ACCOUNT_LIFECYCLE"
 
 
 @dataclass
@@ -33,6 +44,11 @@ class AuthenticationEvent:
     authenticator_id: Optional[str] = None
     session_id: Optional[str] = None
     source_provider: Optional[str] = "keycloak"
+
+    # Formal state-machine attributes
+    event_category: str = EventCategory.AUTHENTICATION.value
+    effective_assurance: Optional[AssuranceLevel] = None
+    attempted_assurance: Optional[AssuranceLevel] = None
 
 
 @dataclass

@@ -7,7 +7,7 @@ risk assessment, and explainable security alerts.
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from backend.models.assurance import AssuranceLevel
 
 
@@ -36,6 +36,7 @@ class DriftResult:
     The standardized output contract for the drift detection engine.
     Fulfills the requirement to output an explainable result rather
     than just an 'Attack Detected' flag.
+    Explicitly links qualifying source and target events.
     """
     drift_detected: bool
     reason: str
@@ -44,6 +45,22 @@ class DriftResult:
     current_method: Optional[str] = None
     current_assurance: Optional[AssuranceLevel] = None
     transition_type: Optional[str] = None
+    source_event_id: Optional[str] = None
+    target_event_id: Optional[str] = None
+
+
+@dataclass
+class ContextAnomaly:
+    """
+    Structured contextual anomaly representing a discrete telemetry delta
+    between sequential events or against established user baselines.
+    """
+    source_event_id: Optional[str]
+    target_event_id: Optional[str]
+    anomaly_type: str  # e.g., LOCATION_CHANGE, IP_CHANGE, DEVICE_CHANGE
+    previous_value: Optional[str]
+    current_value: Optional[str]
+    lifecycle_stage: str  # e.g., AUTHENTICATION, SESSION_LIFECYCLE, ACCOUNT_LIFECYCLE
 
 
 @dataclass
@@ -52,6 +69,7 @@ class ContextEvidence:
     Contextual signals observed during journey analysis.
     Explicitly tracks whether signals were confirmed, absent, or unavailable.
     Preserves primary baseline location and observed location separately.
+    Includes structured discrete anomalies across sequential transitions.
     """
     is_new_device: Optional[bool] = None
     device_id: Optional[str] = None
@@ -64,6 +82,7 @@ class ContextEvidence:
     authenticator_id: Optional[str] = None
     prior_failures_count: int = 0
     evidence_notes: List[str] = field(default_factory=list)
+    context_anomalies: List[ContextAnomaly] = field(default_factory=list)
 
 
 @dataclass
@@ -83,6 +102,8 @@ class SecurityAlert:
     """
     Comprehensive explainable security alert for dashboard and SIEM export.
     Distinguishes ASSURANCE_DRIFT from CONTEXTUAL_ANOMALY.
+    Explicitly cites qualifying source and target events and records
+    discrete context anomalies and failed authentications.
     """
     alert_id: str
     user_id: str
@@ -97,3 +118,7 @@ class SecurityAlert:
     session_id: Optional[str] = None
     priority: str = "INFORMATIONAL"
     alert_type: str = "INFORMATIONAL"
+    source_event_id: Optional[str] = None
+    target_event_id: Optional[str] = None
+    context_anomalies: List[ContextAnomaly] = field(default_factory=list)
+    failed_authentications: List[Dict[str, Any]] = field(default_factory=list)

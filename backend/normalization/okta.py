@@ -6,8 +6,9 @@ is provider-agnostic and can ingest alternative enterprise identity logs.
 
 from typing import Any, Dict, Optional
 import uuid
-from backend.models.event import AuthenticationEvent
+from backend.models.event import AuthenticationEvent, EventCategory
 from backend.normalization.base import BaseEventNormalizer
+from backend.assurance.assurance_assignment import assign_event_assurance
 
 
 class OktaEventNormalizer(BaseEventNormalizer):
@@ -15,6 +16,8 @@ class OktaEventNormalizer(BaseEventNormalizer):
     Normalizes Okta System Log JSON events into AuthenticationEvent.
     Adheres strictly to the same common normalized schema.
     Separates IP address from geographic location strictly without fabrication.
+    Enforces orthogonal event classification between authentication ceremonies,
+    session lifecycle events, and account factor mutations.
     """
 
     METHOD_MAPPING = {
@@ -30,6 +33,7 @@ class OktaEventNormalizer(BaseEventNormalizer):
         "email": "email_otp",
         "password": "password",
         "push": "push_notification",
+        "refresh_token": "refresh_token",
     }
 
     def normalize_single(self, raw: Dict[str, Any]) -> Optional[AuthenticationEvent]:
@@ -56,8 +60,31 @@ class OktaEventNormalizer(BaseEventNormalizer):
             or "unknown_user"
         ).strip()
 
-        # 4. Event Type
+        # 4. Event Type & Event Category Classification
         event_type = str(raw.get("eventType") or "user.authentication.authenticate").strip()
+        event_type_lower = event_type.lower()
+
+        if (
+            event_type_lower.startswith("user.session.refresh")
+            or event_type_lower.startswith("app.oauth2.token.grant")
+            or event_type_lower.startswith("user.session.end")
+            or "refresh" in event_type_lower
+        ):
+            event_category = EventCategory.SESSION_LIFECYCLE.value
+        elif (
+            event_type_lower.startswith("user.mfa.factor.")
+            or event_type_lower.startswith("factor.enroll")
+            or event_type_lower.startswith("factor.activate")
+            or event_type_lower.startswith("user.credential.enroll")
+        ):
+            event_category = EventCategory.ACCOUNT_LIFECYCLE.value
+        elif (
+            event_type_lower.startswith("user.authentication.")
+            or event_type_lower.startswith("user.session.start")
+        ):
+            event_category = EventCategory.AUTHENTICATION.value
+        else:
+            event_category = EventCategory.AUTHENTICATION.value
 
         # 5. Outcome
         outcome_obj = raw.get("outcome") if isinstance(raw.get("outcome"), dict) else {}
@@ -77,9 +104,11 @@ class OktaEventNormalizer(BaseEventNormalizer):
             method_clean = str(raw_method).strip().lower()
             auth_method = self.METHOD_MAPPING.get(method_clean, method_clean)
         else:
-            if "mfa" in event_type.lower():
+            if event_category == EventCategory.SESSION_LIFECYCLE.value:
+                auth_method = "refresh_token"
+            elif "mfa" in event_type_lower:
                 auth_method = "totp"
-            elif "factor.activate" in event_type.lower():
+            elif "factor.activate" in event_type_lower:
                 auth_method = "webauthn"
             else:
                 auth_method = "password"
@@ -129,7 +158,7 @@ class OktaEventNormalizer(BaseEventNormalizer):
         else:
             session_id = None
 
-        return AuthenticationEvent(
+        event = AuthenticationEvent(
             event_id=event_id,
             user_id=user_id,
             timestamp=timestamp,
@@ -141,5 +170,10 @@ class OktaEventNormalizer(BaseEventNormalizer):
             ip_address=ip_address,
             authenticator_id=authenticator_id,
             session_id=session_id,
-            source_provider="okta"
+            source_provider="okta",
+            event_category=event_category
         )
+
+        # Annotate domain-restricted assurance levels
+        assign_event_assurance(event)
+        return event

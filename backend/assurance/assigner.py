@@ -4,6 +4,17 @@ Maintains seamless compatibility with existing callers while delegating to assur
 """
 
 from backend.models.assurance import AssuranceLevel
-from backend.assurance.assurance_assignment import assign_assurance, get_assurance_justification
+from backend.assurance.assurance_assignment import (
+    assign_assurance,
+    assign_event_assurance,
+    get_assurance_justification,
+    is_high_assurance
+)
 
-__all__ = ["assign_assurance", "AssuranceLevel", "get_assurance_justification"]
+__all__ = [
+    "assign_assurance",
+    "assign_event_assurance",
+    "AssuranceLevel",
+    "get_assurance_justification",
+    "is_high_assurance"
+]
