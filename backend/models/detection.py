@@ -77,7 +77,7 @@ class RiskAssessment:
 @dataclass
 class SecurityAlert:
     """
-    Comprehensive explainable security alert for Rohan's dashboard and SIEM export.
+    Comprehensive explainable security alert for dashboard and SIEM export.
     """
     alert_id: str
     user_id: str

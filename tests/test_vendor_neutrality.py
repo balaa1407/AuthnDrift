@@ -2,7 +2,7 @@
 AuthDrift Vendor-Neutrality Tests.
 Demonstrates that an alternative enterprise identity provider format (Okta System Log)
 is normalized into the exact same common schema and seamlessly processed by
-AuthDrift's downstream journey reconstruction and Balaa's AuthDriftEngine.
+AuthDrift's downstream journey reconstruction and AuthDriftEngine.
 """
 
 import pytest

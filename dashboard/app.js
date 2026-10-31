@@ -3,7 +3,7 @@
  * Interacts with AuthDrift FastAPI backend to render:
  * A. Authentication Overview Metrics
  * B. Authentication Journey Timelines
- * C. Explainable Security Intelligence (Balaa Engine)
+ * C. Explainable Security Intelligence & Alerts
  * D. Filtering, Scenario Switching & Raw Log Ingestion
  */
 
@@ -102,7 +102,7 @@ function renderJourneys(filteredJourneys) {
   container.innerHTML = '';
 
   filteredJourneys.forEach((journey, idx) => {
-    // Find matching alert from Balaa's engine
+    // Find matching alert from detection engine
     const matchedAlert = allAlerts.find(a => 
       a.user_id === journey.user_id && (a.session_id === journey.session_id || !journey.session_id)
     ) || allAlerts[idx];
@@ -244,7 +244,7 @@ function renderAlertDetails(alert, journey) {
     </div>
 
     <div>
-      <h4 class="section-title">Detection Explanation (Balaa Engine)</h4>
+      <h4 class="section-title">Detection Explanation</h4>
       <div class="explanation-box">
         ${alert.explanation}
       </div>
@@ -364,13 +364,13 @@ document.getElementById('btn-sample-kc').addEventListener('click', () => {
       "id": "kc-demo-01",
       "time": Date.now() - 30000,
       "type": "LOGIN_ERROR",
-      "details": { "username": "rohan_demo", "auth_method": "passkey", "error": "user_cancelled" }
+      "details": { "username": "demo_user", "auth_method": "passkey", "error": "user_cancelled" }
     },
     {
       "id": "kc-demo-02",
       "time": Date.now() - 10000,
       "type": "LOGIN",
-      "details": { "username": "rohan_demo", "auth_method": "password" }
+      "details": { "username": "demo_user", "auth_method": "password" }
     }
   ], null, 2);
 });
@@ -383,7 +383,7 @@ document.getElementById('btn-sample-okta').addEventListener('click', () => {
       "published": new Date(Date.now() - 40000).toISOString(),
       "eventType": "user.authentication.auth_via_mfa",
       "outcome": { "result": "FAILURE" },
-      "actor": { "alternateId": "rohan_okta@company.com" },
+      "actor": { "alternateId": "demo_user@company.com" },
       "authenticationContext": { "credentialProvider": "FIDO2 (WebAuthn)" }
     },
     {
@@ -391,7 +391,7 @@ document.getElementById('btn-sample-okta').addEventListener('click', () => {
       "published": new Date(Date.now() - 15000).toISOString(),
       "eventType": "user.authentication.authenticate",
       "outcome": { "result": "SUCCESS" },
-      "actor": { "alternateId": "rohan_okta@company.com" },
+      "actor": { "alternateId": "demo_user@company.com" },
       "authenticationContext": { "credentialProvider": "PASSWORD" }
     }
   ], null, 2);

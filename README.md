@@ -85,16 +85,16 @@ The prototype is validated against specific Keycloak scenarios to ensure accurat
 
 ---
 
-## 👥 Team Responsibilities & Branches
+## 📦 System Architecture & Modular Subsystems
 
-The project is structured across modular feature branches to ensure parallel development before integrating into `main`.
+The project is structured into modular components:
 
-| Team Member | Branch | Responsibilities |
+| Subsystem | Module | Responsibilities |
 | :--- | :--- | :--- |
-| **Balaa** | `balaa/assurance-detection` | Assurance model, mapping logic, basic drift detection, output contracts. |
-| **Tashi** | `tashi/keycloak-events` | Keycloak setup, auth scenarios, raw event extraction, schema normalization. |
-| **Rohan** | `rohan/journey-ui` | Journey reconstruction, timeline representation, UI display of results. |
-| **Varun** | `varun/testing` | Test cases, test data, expected/actual comparison, regression validation. |
+| **Security Intelligence** | `backend/assurance/`, `backend/detection/`, `backend/risk/`, `backend/alerts/` | Relative assurance model, drift detection, contextual correlation, risk scoring, explainable alert generation. |
+| **Event Extraction** | `backend/normalization/`, `keycloak/` | Keycloak & Okta event collection, raw log parsing, vendor-neutral schema normalization. |
+| **Journey Reconstruction** | `backend/journey/` | Chronological event grouping, multi-user isolation, session boundary tracking. |
+| **Dashboard & Web API** | `backend/api.py`, `dashboard/` | FastAPI REST services, overview metrics, interactive journey visualizer, explainable risk modal. |
 
 ---
 

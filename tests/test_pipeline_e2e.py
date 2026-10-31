@@ -1,7 +1,7 @@
 """
 AuthDrift End-to-End Pipeline Integration Tests.
 Validates:
-- Complete flow: Raw Keycloak logs -> Normalization -> Journey Reconstruction -> Balaa's AuthDriftEngine
+- Complete flow: Raw Keycloak logs -> Normalization -> Journey Reconstruction -> AuthDriftEngine
 - Verifies real SecurityAlert generation with actual risk scores and explainable rationale
 """
 
@@ -25,7 +25,7 @@ class TestPipelineE2E:
         assert len(result.journeys) > 0
         assert len(result.alerts) == len(result.journeys)
 
-        # Inspect specific journeys and alerts from Balaa's engine
+        # Inspect specific journeys and alerts from AuthDriftEngine
         alert_map = {a.user_id: a for a in result.alerts}
 
         # Alice: TC01 - Passkey Success

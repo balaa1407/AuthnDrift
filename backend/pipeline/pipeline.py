@@ -4,7 +4,7 @@ Directly integrates:
 1. Provider Normalization (Keycloak / Okta / Vendor-neutral)
 2. Event Deduplication
 3. Authentication Journey Reconstruction
-4. Balaa's AuthDriftEngine (Detection, Correlation, Risk Scoring, Alerts)
+4. AuthDriftEngine (Detection, Correlation, Risk Scoring, Alerts)
 """
 
 from dataclasses import dataclass, field
