@@ -58,7 +58,11 @@ class LocationProfiler:
         """
         Builds or rebuilds user location profiles from a collection of historical events.
         Filters strictly for successful authentications with valid location data.
+
+        Any previously built profiles are discarded first so that stale baselines
+        from an earlier ingestion can never leak into this one.
         """
+        self._profiles = {}
         user_successful_locations: Dict[str, List[Tuple[datetime, str]]] = {}
 
         for event in events:
@@ -124,6 +128,35 @@ class LocationProfiler:
             self._profiles[user_id] = profile
 
         return self._profiles
+
+    def snapshot_before(
+        self,
+        events: List[AuthenticationEvent],
+        user_id: str,
+        before: datetime,
+        exclude_event_ids: Optional[Set[str]] = None
+    ) -> "LocationProfiler":
+        """
+        Returns a NEW profiler (same configuration) whose baseline for `user_id` is built
+        only from that user's events strictly earlier than `before`.
+
+        This guarantees that the journey being evaluated, and anything after it, cannot
+        contaminate its own historical baseline, and that other users' events are ignored.
+        """
+        excluded = exclude_event_ids or set()
+        history = [
+            e for e in events
+            if e.user_id == user_id
+            and e.timestamp is not None
+            and e.timestamp < before
+            and e.event_id not in excluded
+        ]
+        snapshot = LocationProfiler(
+            min_successful_observations=self.min_successful_observations,
+            lookback_limit=self.lookback_limit
+        )
+        snapshot.build_profiles(history)
+        return snapshot
 
     def get_profile(self, user_id: str) -> Optional[UserLocationProfile]:
         """Retrieves profile for a user, or None if not tracked."""

@@ -4,6 +4,7 @@ Defines the abstract contract for converting raw identity provider event logs
 into the common AuthenticationEvent normalized schema.
 """
 
+import ipaddress
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -50,6 +51,40 @@ class BaseEventNormalizer(ABC):
         """Stores the raw event in the debug cache."""
         if event_id:
             self._raw_cache[event_id] = raw_event
+
+    @staticmethod
+    def _clean_geo_part(val: Any) -> Optional[str]:
+        """Returns a stripped string for scalar text values; None for empty/malformed ones."""
+        if isinstance(val, bool) or not isinstance(val, (str, int, float)):
+            return None
+        text = str(val).strip()
+        return text or None
+
+    @staticmethod
+    def _looks_like_ip(text: str) -> bool:
+        try:
+            ipaddress.ip_address(text.strip("[]"))
+            return True
+        except ValueError:
+            return False
+
+    @classmethod
+    def _compose_location(cls, city: Any = None, country: Any = None, fallback: Any = None) -> Optional[str]:
+        """
+        Builds a geographic location string ("City, Country") from provider fields.
+        - Falls back to a pre-formatted `fallback` string only when no city/country is present.
+        - Never returns an IP address as a location, and never invents missing parts.
+        - Returns None when nothing usable is available.
+        """
+        city_s = cls._clean_geo_part(city)
+        country_s = cls._clean_geo_part(country)
+        if city_s and country_s:
+            location = f"{city_s}, {country_s}"
+        else:
+            location = city_s or country_s or cls._clean_geo_part(fallback)
+        if location and cls._looks_like_ip(location):
+            return None
+        return location
 
     @staticmethod
     def _parse_timestamp(val: Any) -> datetime:

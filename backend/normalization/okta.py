@@ -101,16 +101,11 @@ class OktaEventNormalizer(BaseEventNormalizer):
 
         # Extract geographic location strictly - NEVER fall back to IP address
         geo = client.get("geographicalContext") if isinstance(client.get("geographicalContext"), dict) else {}
-        city = geo.get("city")
-        country = geo.get("country")
-        if city and country:
-            location = f"{city}, {country}"
-        elif city:
-            location = str(city)
-        elif raw.get("location"):
-            location = str(raw.get("location")).strip()
-        else:
-            location = None
+        location = self._compose_location(
+            city=geo.get("city"),
+            country=geo.get("country"),
+            fallback=raw.get("location")
+        )
 
         debug_context = raw.get("debugContext") if isinstance(raw.get("debugContext"), dict) else {}
         debug_data = debug_context.get("debugData") if isinstance(debug_context.get("debugData"), dict) else {}

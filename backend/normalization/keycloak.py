@@ -146,16 +146,16 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
             ip_address = None
 
         # Extract geographic location strictly - NEVER fall back to IP address
-        location = (
-            details.get("location")
-            or details.get("geo_location")
-            or details.get("geographic_location")
-            or raw.get("location")
+        location = self._compose_location(
+            city=details.get("city") or raw.get("city"),
+            country=details.get("country") or raw.get("country"),
+            fallback=(
+                details.get("location")
+                or details.get("geo_location")
+                or details.get("geographic_location")
+                or raw.get("location")
+            )
         )
-        if location:
-            location = str(location).strip()
-        else:
-            location = None
 
         authenticator_id = (
             details.get("authenticator_id")

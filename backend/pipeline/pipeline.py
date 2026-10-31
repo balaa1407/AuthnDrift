@@ -35,6 +35,22 @@ class PipelineExecutionResult:
     provider: str
     execution_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
+    def _location_context(self, index: int) -> Dict[str, Any]:
+        """
+        Location summary for the journey at `index` (alerts are produced 1:1, in order,
+        with journeys). Missing values stay None / UNKNOWN; nothing is fabricated.
+        """
+        if index >= len(self.alerts):
+            return {"primary_location": None, "location": None,
+                    "location_status": "UNKNOWN", "ip_address": None}
+        ev = self.alerts[index].context_evidence
+        return {
+            "primary_location": ev.primary_location,
+            "location": ev.location,
+            "location_status": ev.location_status or "UNKNOWN",
+            "ip_address": ev.ip_address
+        }
+
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the pipeline result to JSON-compatible dictionary."""
         return {
@@ -62,6 +78,8 @@ class PipelineExecutionResult:
                 {
                     "user_id": j.user_id,
                     "session_id": j.session_id,
+                    "alert_id": self.alerts[i].alert_id if i < len(self.alerts) else None,
+                    "location_context": self._location_context(i),
                     "event_count": len(j.events),
                     "start_time": j.events[0].timestamp.isoformat() if j.events else None,
                     "end_time": j.events[-1].timestamp.isoformat() if j.events else None,
@@ -82,7 +100,7 @@ class PipelineExecutionResult:
                         for e in j.events
                     ]
                 }
-                for j in self.journeys
+                for i, j in enumerate(self.journeys)
             ],
             "alerts": [
                 {
@@ -177,7 +195,7 @@ class AuthDriftPipeline:
         1. Normalization from raw provider format
         2. Deduplication
         3. Journey Reconstruction
-        4. Per-User Location Baseline Building
+        4. Per-User, Per-Journey Historical Location Baselining
         5. AuthDriftEngine Detection Evaluation
         6. Metric Compilation
         """
@@ -196,19 +214,30 @@ class AuthDriftPipeline:
         # 3. Journey Reconstruction
         journeys = self.reconstructor.reconstruct_journeys(events_to_process)
 
-        # 4. Per-User Historical Location Baseline Construction
-        # Establish primary location baseline using historical successful events only
-        self.location_profiler.build_profiles(events_to_process)
-
-        # 5. AuthDriftEngine Detection Evaluation
+        # 4/5. Per-journey, per-user historical location baseline + detection.
+        # The baseline for each journey is built ONLY from that user's successful events
+        # that occurred strictly BEFORE the journey starts, so the login being evaluated
+        # can never become part of its own "known" history.
         alerts: List[SecurityAlert] = []
         for journey in journeys:
+            journey_start = journey.events[0].timestamp if journey.events else None
+            if journey_start is not None:
+                journey_profiler = self.location_profiler.snapshot_before(
+                    events_to_process,
+                    user_id=journey.user_id,
+                    before=journey_start,
+                    exclude_event_ids={e.event_id for e in journey.events}
+                )
+            else:
+                journey_profiler = self.location_profiler.snapshot_before(
+                    [], user_id=journey.user_id, before=datetime.now(timezone.utc)
+                )
             alert = self.engine.evaluate_journey(
                 journey=journey.events,
                 known_devices=self.known_devices,
                 known_locations=self.known_locations,
                 known_authenticators=self.known_authenticators,
-                location_profiler=self.location_profiler,
+                location_profiler=journey_profiler,
                 session_id=journey.session_id
             )
             alerts.append(alert)

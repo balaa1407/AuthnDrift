@@ -20,6 +20,19 @@ function getAssuranceLevel(method) {
   return 'LOW';
 }
 
+// Match a journey to its own alert. The API links them via alert_id; fall back to
+// user + session only for older payloads. Never match on user alone: a user can have
+// several journeys (e.g. Bengaluru then Berlin) that each carry different location context.
+function findAlertForJourney(journey) {
+  if (!journey) return null;
+  if (journey.alert_id) {
+    return allAlerts.find(a => a.alert_id === journey.alert_id) || null;
+  }
+  return allAlerts.find(a =>
+    a.user_id === journey.user_id && a.session_id === journey.session_id
+  ) || null;
+}
+
 function formatDate(isoStr) {
   if (!isoStr) return 'N/A';
   try {
@@ -103,9 +116,7 @@ function renderJourneys(filteredJourneys) {
 
   filteredJourneys.forEach((journey, idx) => {
     // Find matching alert from detection engine
-    const matchedAlert = allAlerts.find(a => 
-      a.user_id === journey.user_id && (a.session_id === journey.session_id || !journey.session_id)
-    ) || allAlerts[idx];
+    const matchedAlert = findAlertForJourney(journey);
 
     const hasDrift = matchedAlert ? matchedAlert.drift_detected : false;
     const isSelected = idx === selectedJourneyIndex;
@@ -193,11 +204,8 @@ function renderJourneys(filteredJourneys) {
   });
 
   // Render the selected journey details
-  const initialSelectedAlert = allAlerts.find(a => 
-    a.user_id === filteredJourneys[selectedJourneyIndex]?.user_id
-  ) || allAlerts[0];
-
-  renderAlertDetails(initialSelectedAlert, filteredJourneys[selectedJourneyIndex]);
+  const selectedJourney = filteredJourneys[selectedJourneyIndex];
+  renderAlertDetails(findAlertForJourney(selectedJourney), selectedJourney);
 }
 
 // 4. Render Explainable Alert Details (Section C)
@@ -224,12 +232,6 @@ function renderAlertDetails(alert, journey) {
     if (val === true) return '<span class="evidence-val flagged">⚠️ Confirmed New</span>';
     if (val === false) return '<span class="evidence-val">✅ Known / Baseline</span>';
     return '<span class="evidence-val" style="color: var(--text-muted);">Unavailable / Unconfigured</span>';
-  };
-
-  const formatLocStatus = (status) => {
-    if (status === 'KNOWN') return '<span class="loc-status-badge loc-status-known">✅ KNOWN</span>';
-    if (status === 'NEW') return '<span class="loc-status-badge loc-status-new">⚠️ NEW</span>';
-    return '<span class="loc-status-badge loc-status-unknown">ℹ️ UNKNOWN (Insufficient History)</span>';
   };
 
   let factorListHtml = '';
@@ -308,21 +310,12 @@ function renderAlertDetails(alert, journey) {
           ${evidence.device_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">ID: ${evidence.device_id}</div>` : ''}
         </div>
 
-        <div class="evidence-item">
-          <div class="evidence-key">Location Status & Baseline</div>
-          ${formatLocStatus(evidence.location_status)}
-          <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
-            Observed: <strong>${evidence.location || 'Unavailable'}</strong><br>
-            Primary Baseline: <strong>${evidence.primary_location || 'Not Established'}</strong>
-          </div>
-        </div>
-
-        <div class="evidence-item">
-          <div class="evidence-key">IP Address</div>
-          <div class="evidence-val" style="font-family: var(--font-mono); font-size: 0.8rem;">
-            ${evidence.ip_address ? `🌐 ${evidence.ip_address}` : '<span style="color: var(--text-muted); font-weight: normal;">Unavailable</span>'}
-          </div>
-        </div>
+        ${AuthDriftLocationView.buildLocationFieldsHtml({
+          primary_location: evidence.primary_location,
+          location: evidence.location,
+          location_status: evidence.location_status,
+          ip_address: evidence.ip_address
+        })}
 
         <div class="evidence-item">
           <div class="evidence-key">Authenticator Registration</div>
@@ -356,7 +349,7 @@ function applyFilters() {
   const severityFilter = document.getElementById('filter-severity').value;
   const driftOnly = document.getElementById('filter-drift-only').checked;
 
-  const filtered = allJourneys.filter((journey, idx) => {
+  const filtered = allJourneys.filter((journey) => {
     // User filter
     if (userQuery && !journey.user_id.toLowerCase().includes(userQuery)) {
       return false;
@@ -369,9 +362,7 @@ function applyFilters() {
     }
 
     // Match alert
-    const matchedAlert = allAlerts.find(a => 
-      a.user_id === journey.user_id && (a.session_id === journey.session_id || !journey.session_id)
-    ) || allAlerts[idx];
+    const matchedAlert = findAlertForJourney(journey);
 
     // Alert Type filter
     if (alertTypeFilter && matchedAlert?.alert_type !== alertTypeFilter) {
