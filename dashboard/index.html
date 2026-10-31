@@ -88,6 +88,16 @@
       </div>
 
       <div class="filter-group">
+        <label for="filter-alert-type">Alert Type:</label>
+        <select id="filter-alert-type" class="select-input">
+          <option value="">All Alert Types</option>
+          <option value="ASSURANCE_DRIFT">Assurance Drift</option>
+          <option value="CONTEXTUAL_ANOMALY">Contextual Anomaly</option>
+          <option value="INFORMATIONAL">Informational</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
         <label for="filter-outcome">Outcome:</label>
         <select id="filter-outcome" class="select-input">
           <option value="">All Outcomes</option>
@@ -184,4 +194,3 @@
   <script src="/static/app.js"></script>
 </body>
 </html>
-

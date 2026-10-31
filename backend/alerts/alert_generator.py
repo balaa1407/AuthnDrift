@@ -2,6 +2,7 @@
 AuthDrift: Explainable Alert Generator.
 Produces human-readable and machine-readable explainable security alerts
 derived strictly from empirical journey evidence.
+Distinguishes ASSURANCE_DRIFT from CONTEXTUAL_ANOMALY.
 """
 
 import uuid
@@ -39,16 +40,37 @@ class AlertGenerator:
         # Preserve chronological ordering when reporting distinct methods
         unique_methods_ordered = list(dict.fromkeys(methods_involved))
 
+        # Classify alert type
+        has_context_anomaly = (
+            context_evidence.is_new_device is True
+            or context_evidence.is_location_changed is True
+            or context_evidence.authenticator_registered is True
+            or context_evidence.prior_failures_count >= 2
+            or risk_assessment.score > 0
+        )
+
+        if drift_result.drift_detected:
+            alert_type = "ASSURANCE_DRIFT"
+        elif has_context_anomaly:
+            alert_type = "CONTEXTUAL_ANOMALY"
+        else:
+            alert_type = "INFORMATIONAL"
+
         # Generate narrative explanation
         explanation_parts: List[str] = []
 
-        if drift_result.drift_detected:
+        if alert_type == "ASSURANCE_DRIFT":
             methods_str = ", ".join(unique_methods_ordered) if unique_methods_ordered else "unspecified"
             explanation_parts.append(
                 f"Authentication assurance drift detected for user '{user_id}'. "
                 f"Journey contained {len(journey)} events involving methods: {methods_str}."
             )
             explanation_parts.append(f"Transition Analysis: {drift_result.reason}")
+        elif alert_type == "CONTEXTUAL_ANOMALY":
+            explanation_parts.append(
+                f"Contextual anomaly detected for user '{user_id}' without authentication assurance drift. "
+                f"Journey contained {len(journey)} events."
+            )
         else:
             explanation_parts.append(
                 f"Authentication journey analyzed for user '{user_id}'. "
@@ -63,10 +85,17 @@ class AlertGenerator:
             context_notes.append(f"authentication completed from a known device ('{context_evidence.device_id}')")
 
         if context_evidence.is_location_changed is True:
-            context_notes.append(f"location changed to '{context_evidence.location}'")
+            p_loc = f" (primary baseline: '{context_evidence.primary_location}')" if context_evidence.primary_location else ""
+            context_notes.append(f"new location observed ('{context_evidence.location}'){p_loc}")
+        elif context_evidence.location_status == "KNOWN" and context_evidence.location:
+            context_notes.append(f"location confirmed matching baseline ('{context_evidence.location}')")
 
         if context_evidence.authenticator_registered is True:
-            context_notes.append("a new authenticator credential was registered following authentication")
+            reg_id = f" ('{context_evidence.authenticator_id}')" if context_evidence.authenticator_id else ""
+            context_notes.append(f"an authenticator credential was registered following authentication{reg_id}")
+
+        if context_evidence.ip_address:
+            context_notes.append(f"observed IP address: {context_evidence.ip_address}")
 
         if context_notes:
             explanation_parts.append(f"Contextual Signals: Identified {', '.join(context_notes)}.")
@@ -80,6 +109,10 @@ class AlertGenerator:
                 "Notice: An assurance downgrade is not definitive proof of an active compromise. "
                 "Legitimate factors such as forgotten hardware authenticators, browser incompatibility, "
                 "or device migration can trigger fallback. Verification is recommended based on risk severity."
+            )
+        elif alert_type == "CONTEXTUAL_ANOMALY":
+            explanation_parts.append(
+                "Notice: Contextual deviations alone (e.g. traveling or new client) do not constitute proof of compromise."
             )
 
         is_actionable = drift_result.drift_detected or (risk_assessment.score >= 50)
@@ -104,5 +137,6 @@ class AlertGenerator:
             explanation=" ".join(explanation_parts),
             is_actionable=is_actionable,
             session_id=session_id or (journey[0].session_id if journey else None),
-            priority=priority
+            priority=priority,
+            alert_type=alert_type
         )

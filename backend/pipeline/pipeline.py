@@ -4,7 +4,8 @@ Directly integrates:
 1. Provider Normalization (Keycloak / Okta / Vendor-neutral)
 2. Event Deduplication
 3. Authentication Journey Reconstruction
-4. AuthDriftEngine (Detection, Correlation, Risk Scoring, Alerts)
+4. Per-User Location Baselining
+5. AuthDriftEngine (Detection, Correlation, Risk Scoring, Alerts)
 """
 
 from dataclasses import dataclass, field
@@ -18,6 +19,7 @@ from backend.normalization.keycloak import KeycloakEventNormalizer
 from backend.normalization.okta import OktaEventNormalizer
 from backend.normalization.deduplicator import EventDeduplicator
 from backend.journey.reconstructor import JourneyReconstructor
+from backend.correlation.location_profiler import LocationProfiler
 
 
 @dataclass
@@ -49,6 +51,7 @@ class PipelineExecutionResult:
                     "outcome": e.outcome,
                     "device_id": e.device_id,
                     "location": e.location,
+                    "ip_address": e.ip_address,
                     "authenticator_id": e.authenticator_id,
                     "session_id": e.session_id,
                     "source_provider": e.source_provider
@@ -72,6 +75,7 @@ class PipelineExecutionResult:
                             "outcome": e.outcome,
                             "device_id": e.device_id,
                             "location": e.location,
+                            "ip_address": e.ip_address,
                             "authenticator_id": e.authenticator_id,
                             "session_id": e.session_id
                         }
@@ -86,6 +90,8 @@ class PipelineExecutionResult:
                     "user_id": a.user_id,
                     "timestamp": a.timestamp.isoformat() if a.timestamp else None,
                     "drift_detected": a.drift_detected,
+                    "alert_type": getattr(a, "alert_type", "INFORMATIONAL"),
+                    "priority": getattr(a, "priority", "INFORMATIONAL"),
                     "is_actionable": a.is_actionable,
                     "methods_involved": a.methods_involved,
                     "explanation": a.explanation,
@@ -104,6 +110,9 @@ class PipelineExecutionResult:
                         "device_id": a.context_evidence.device_id,
                         "is_location_changed": a.context_evidence.is_location_changed,
                         "location": a.context_evidence.location,
+                        "primary_location": getattr(a.context_evidence, "primary_location", None),
+                        "location_status": getattr(a.context_evidence, "location_status", "UNKNOWN"),
+                        "ip_address": getattr(a.context_evidence, "ip_address", None),
                         "authenticator_registered": a.context_evidence.authenticator_registered,
                         "authenticator_id": a.context_evidence.authenticator_id,
                         "prior_failures_count": a.context_evidence.prior_failures_count,
@@ -131,11 +140,13 @@ class AuthDriftPipeline:
         self,
         engine: Optional[AuthDriftEngine] = None,
         reconstructor: Optional[JourneyReconstructor] = None,
-        deduplicator: Optional[EventDeduplicator] = None
+        deduplicator: Optional[EventDeduplicator] = None,
+        location_profiler: Optional[LocationProfiler] = None
     ):
         self.engine = engine or AuthDriftEngine()
         self.reconstructor = reconstructor or JourneyReconstructor()
         self.deduplicator = deduplicator or EventDeduplicator()
+        self.location_profiler = location_profiler or LocationProfiler(min_successful_observations=2)
 
         self._normalizers: Dict[str, BaseEventNormalizer] = {
             "keycloak": KeycloakEventNormalizer(),
@@ -144,7 +155,7 @@ class AuthDriftPipeline:
 
         # Baseline contextual baseline profiles for evaluation
         self.known_devices: Set[str] = {"corporate-macbook-01", "pixel-9-pro", "laptop-01", "MacBookPro18,1"}
-        self.known_locations: Set[str] = {"Bangalore, IN", "San Francisco, United States", "127.0.0.1"}
+        self.known_locations: Optional[Set[str]] = None
         self.known_authenticators: Set[str] = {"corporate-yubikey-01", "key-01"}
 
     def register_normalizer(self, provider_name: str, normalizer: BaseEventNormalizer) -> None:
@@ -166,8 +177,9 @@ class AuthDriftPipeline:
         1. Normalization from raw provider format
         2. Deduplication
         3. Journey Reconstruction
-        4. AuthDriftEngine Evaluation
-        5. Metric Compilation
+        4. Per-User Location Baseline Building
+        5. AuthDriftEngine Detection Evaluation
+        6. Metric Compilation
         """
         total_raw = len(raw_events)
         normalizer = self.get_normalizer(provider)
@@ -184,7 +196,11 @@ class AuthDriftPipeline:
         # 3. Journey Reconstruction
         journeys = self.reconstructor.reconstruct_journeys(events_to_process)
 
-        # 4. AuthDriftEngine Detection Evaluation
+        # 4. Per-User Historical Location Baseline Construction
+        # Establish primary location baseline using historical successful events only
+        self.location_profiler.build_profiles(events_to_process)
+
+        # 5. AuthDriftEngine Detection Evaluation
         alerts: List[SecurityAlert] = []
         for journey in journeys:
             alert = self.engine.evaluate_journey(
@@ -192,17 +208,21 @@ class AuthDriftPipeline:
                 known_devices=self.known_devices,
                 known_locations=self.known_locations,
                 known_authenticators=self.known_authenticators,
+                location_profiler=self.location_profiler,
                 session_id=journey.session_id
             )
             alerts.append(alert)
 
-        # 5. Metrics calculation
+        # 6. Metrics calculation
         severity_counts = {"LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0}
+        alert_type_counts = {"ASSURANCE_DRIFT": 0, "CONTEXTUAL_ANOMALY": 0, "INFORMATIONAL": 0}
         drift_count = 0
         actionable_count = 0
 
         for a in alerts:
             severity_counts[a.risk_assessment.severity.value] += 1
+            a_type = getattr(a, "alert_type", "INFORMATIONAL")
+            alert_type_counts[a_type] = alert_type_counts.get(a_type, 0) + 1
             if a.drift_detected:
                 drift_count += 1
             if a.is_actionable:
@@ -214,6 +234,7 @@ class AuthDriftPipeline:
             "reconstructed_journeys": len(journeys),
             "detected_drift_alerts": drift_count,
             "actionable_alerts": actionable_count,
+            "alert_type_distribution": alert_type_counts,
             "severity_distribution": severity_counts,
             "drift_rate_percentage": round((drift_count / len(journeys) * 100) if journeys else 0, 1)
         }
@@ -226,4 +247,3 @@ class AuthDriftPipeline:
             metrics=metrics,
             provider=provider
         )
-

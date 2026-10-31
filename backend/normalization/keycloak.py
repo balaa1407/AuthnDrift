@@ -14,6 +14,7 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
     """
     Normalizes Keycloak user authentication and registration events.
     Handles standard Keycloak 20+ event schemas with graceful fallbacks.
+    Separates IP address from geographic location strictly without fabrication.
     """
 
     METHOD_MAPPING = {
@@ -132,11 +133,24 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
         else:
             device_id = None
 
+        # Extract IP address separately
+        raw_ip = (
+            raw.get("ipAddress")
+            or details.get("ip_address")
+            or details.get("ipAddress")
+            or raw.get("ip_address")
+        )
+        if raw_ip:
+            ip_address = str(raw_ip).strip()
+        else:
+            ip_address = None
+
+        # Extract geographic location strictly - NEVER fall back to IP address
         location = (
             details.get("location")
             or details.get("geo_location")
+            or details.get("geographic_location")
             or raw.get("location")
-            or raw.get("ipAddress")
         )
         if location:
             location = str(location).strip()
@@ -172,8 +186,8 @@ class KeycloakEventNormalizer(BaseEventNormalizer):
             outcome=outcome,
             device_id=device_id,
             location=location,
+            ip_address=ip_address,
             authenticator_id=authenticator_id,
             session_id=session_id,
             source_provider="keycloak"
         )
-

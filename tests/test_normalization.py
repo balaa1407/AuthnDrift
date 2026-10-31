@@ -3,6 +3,7 @@ AuthDrift Integration Tests: Event Normalization Layer.
 Validates:
 - Keycloak raw event normalization into common AuthenticationEvent schema
 - Safe handling of missing optional fields (no fabricated context)
+- Strict separation of IP address from geographic location
 - Deduplication of re-processed events
 - Malformed inputs and edge cases
 """
@@ -44,6 +45,7 @@ class TestEventNormalization:
         assert event.outcome == "SUCCESS"
         assert event.device_id == "macbook-air"
         assert event.location == "Bangalore, IN"
+        assert event.ip_address == "192.168.1.50"
         assert event.authenticator_id == "yubikey-5c"
         assert event.session_id == "sess-xyz"
         assert event.source_provider == "keycloak"
@@ -66,6 +68,7 @@ class TestEventNormalization:
         assert event.outcome == "FAILURE"
         assert event.device_id is None
         assert event.location is None
+        assert event.ip_address is None
         assert event.authenticator_id is None
         assert event.session_id is None
 
@@ -83,9 +86,25 @@ class TestEventNormalization:
         assert event.user_id == "heidi"
         assert event.device_id is None
         assert event.location is None
+        assert event.ip_address is None
         assert event.authenticator_id is None
         assert event.session_id is None
         assert event.authentication_method == "password"  # Keycloak default primary credential
+
+    def test_ip_address_not_substituted_for_geographic_location(self):
+        """Verify that ipAddress is never substituted as geographic location when location is absent."""
+        raw = {
+            "id": "kc-evt-103",
+            "time": 1730300425000,
+            "type": "LOGIN",
+            "ipAddress": "198.51.100.99",
+            "details": {
+                "username": "heidi"
+            }
+        }
+        event = self.normalizer.normalize_single(raw)
+        assert event.ip_address == "198.51.100.99"
+        assert event.location is None
 
     def test_raw_event_preserved_for_debugging(self):
         raw = {"id": "kc-evt-debug", "time": 1730300430000, "type": "LOGIN", "details": {"username": "frank"}}
@@ -111,4 +130,3 @@ class TestEventNormalization:
         filtered = self.deduplicator.filter_duplicates([event1, event2])
         assert len(filtered) == 1
         assert filtered[0].event_id == "kc-evt-dup"
-

@@ -1,6 +1,7 @@
 """
 AuthDrift: Core Drift Detection Engine.
-Analyses reconstructed authentication journeys and flags assurance downgrades with supporting evidence.
+Analyses reconstructed authentication journeys and flags assurance downgrades
+with explicit chronological transition logic and supporting empirical evidence.
 """
 
 from datetime import datetime
@@ -8,7 +9,7 @@ from typing import List, Optional, Set
 from backend.models.event import AuthenticationEvent
 from backend.models.detection import DriftResult
 from backend.models.assurance import AssuranceLevel
-from backend.assurance.assurance_assignment import assign_assurance
+from backend.assurance.assurance_model import AssuranceModel
 from backend.detection.detection_rules import (
     DriftDetectionConfig,
     RULE_DOWNGRADE_GENERAL,
@@ -27,6 +28,9 @@ LIFECYCLE_EVENT_TYPES: Set[str] = {
     "CREDENTIAL_REGISTER",
     "LOGOUT",
     "SESSION_LOGOUT",
+    "USER.MFA.FACTOR.ACTIVATE",
+    "FACTOR.ENROLL",
+    "USER.CREDENTIAL.ENROLL",
 }
 
 
@@ -39,11 +43,24 @@ def _is_failure_outcome(outcome: Optional[str]) -> bool:
 
 class DriftDetector:
     """
-    Evaluates authentication journeys for assurance drift.
+    Evaluates authentication journeys for assurance drift using chronological transition logic.
+
+    Guarantees:
+    - Events evaluated in timestamp order.
+    - Downgrades flagged only when a weaker method succeeds after a stronger method failed,
+      or when an explicit downgrade occurs across established sessions.
+    - Repeated failures alone are never labeled as assurance drift.
+    - Step-up authentications are recognized as legitimate security enhancements, not downgrades.
+    - Unknown authentication methods are conservatively assigned to LOW and made explicit.
     """
 
-    def __init__(self, config: Optional[DriftDetectionConfig] = None):
+    def __init__(
+        self,
+        config: Optional[DriftDetectionConfig] = None,
+        assurance_model: Optional[AssuranceModel] = None
+    ):
         self.config = config or DriftDetectionConfig()
+        self.assurance_model = assurance_model or AssuranceModel()
 
     def detect_drift(self, journey: List[AuthenticationEvent]) -> DriftResult:
         """
@@ -56,7 +73,7 @@ class DriftDetector:
                 reason="Insufficient events in journey to detect drift (minimum 2 required)."
             )
 
-        # 1. Defensively ensure events are chronologically ordered
+        # 1. Defensively ensure events are chronologically ordered (handle None timestamps safely)
         sorted_journey = sorted(
             journey,
             key=lambda e: e.timestamp if e.timestamp else datetime.min
@@ -84,90 +101,125 @@ class DriftDetector:
                 reason="Insufficient authentication events in journey to detect drift (minimum 2 required)."
             )
 
-        max_previous_event = auth_events[0]
-        max_previous_assurance = assign_assurance(max_previous_event.authentication_method)
-        has_prior_failure = _is_failure_outcome(max_previous_event.outcome)
-        failure_count = 1 if has_prior_failure else 0
+        # 4. State tracking for chronological transition evaluation
+        pending_failures: List[AuthenticationEvent] = []
+        last_successful_event: Optional[AuthenticationEvent] = None
+        detected_drift: Optional[DriftResult] = None
+        total_failures = 0
         step_up_observed = False
 
-        # Track failed events to ensure failed strong method verification
-        failed_events: List[AuthenticationEvent] = []
-        if has_prior_failure:
-            failed_events.append(max_previous_event)
-
-        for current_event in auth_events[1:]:
-            current_assurance = assign_assurance(current_event.authentication_method)
+        for current_event in auth_events:
+            current_method = current_event.authentication_method
+            current_assurance, is_recognized = self.assurance_model.get_assurance_level(current_method)
             current_is_failure = _is_failure_outcome(current_event.outcome)
 
             if current_is_failure:
-                failure_count += 1
-                failed_events.append(current_event)
-
-            # Check for Step-Up Authentication
-            if current_assurance.value > max_previous_assurance.value:
-                step_up_observed = True
-                max_previous_event = current_event
-                max_previous_assurance = current_assurance
+                total_failures += 1
+                pending_failures.append(current_event)
+                # A failure alone does NOT flag assurance drift - must await subsequent outcome
                 continue
 
-            # Check for Assurance Downgrade
-            assurance_drop = max_previous_assurance.value - current_assurance.value
-            if assurance_drop >= self.config.min_assurance_drop:
-                # Identify if any prior failed event had higher assurance than the current method
-                stronger_failed_events = [
-                    f for f in failed_events
-                    if assign_assurance(f.authentication_method).value > current_assurance.value
-                ]
-
-                # If require_prior_failure is configured, do not flag drift unless a stronger method failed
-                if self.config.require_prior_failure and not stronger_failed_events:
-                    continue
-
-                if failure_count > 1:
-                    transition_type = RULE_MULTI_FAILURE_FALLBACK
-                    reason = (
-                        f"Multiple failed authentication attempts ({failure_count}) followed by "
-                        f"assurance downgrade from {max_previous_assurance.name} ({max_previous_event.authentication_method}) "
-                        f"to {current_assurance.name} ({current_event.authentication_method})."
-                    )
-                elif stronger_failed_events and not current_is_failure:
-                    transition_type = RULE_FAILED_STRONG_SUCCESS_WEAK
-                    failed_ref = stronger_failed_events[-1]
-                    failed_ref_assurance = assign_assurance(failed_ref.authentication_method)
-                    reason = (
-                        f"Failed strong authentication ({failed_ref.authentication_method} - {failed_ref_assurance.name}) "
-                        f"followed by successful fallback to lower-assurance method "
-                        f"({current_event.authentication_method} - {current_assurance.name})."
-                    )
-                elif self.config.detect_any_downgrade:
-                    transition_type = RULE_DOWNGRADE_GENERAL
-                    reason = (
-                        f"Authentication assurance decreased from {max_previous_assurance.name} "
-                        f"({max_previous_event.authentication_method}) to {current_assurance.name} "
-                        f"({current_event.authentication_method})."
-                    )
-                else:
-                    continue
-
-                return DriftResult(
-                    drift_detected=True,
-                    reason=reason,
-                    previous_method=max_previous_event.authentication_method,
-                    previous_assurance=max_previous_assurance,
-                    current_method=current_event.authentication_method,
-                    current_assurance=current_assurance,
-                    transition_type=transition_type
+            # Current event is a SUCCESS!
+            # Evaluate against pending failures (failed strong followed by weaker fallback)
+            if pending_failures:
+                # Find the strongest method among pending failures
+                strongest_failed_event = max(
+                    pending_failures,
+                    key=lambda f: self.assurance_model.get_assurance_level(f.authentication_method)[0].value
+                )
+                strongest_failed_assurance, failed_is_rec = self.assurance_model.get_assurance_level(
+                    strongest_failed_event.authentication_method
                 )
 
-        # Check if repeated failures occurred at the same tier without downgrade
-        if failure_count >= 2:
+                assurance_drop = strongest_failed_assurance.value - current_assurance.value
+
+                if assurance_drop >= self.config.min_assurance_drop:
+                    # Confirmed downgrade: weaker method succeeded after stronger method failed
+                    unknown_notes = []
+                    if not failed_is_rec:
+                        unknown_notes.append(f"'{strongest_failed_event.authentication_method}' is an unknown method evaluated defensively as LOW assurance")
+                    if not is_recognized:
+                        unknown_notes.append(f"'{current_method}' is an unknown method evaluated defensively as LOW assurance")
+                    unknown_suffix = f" (Note: {'; '.join(unknown_notes)})." if unknown_notes else ""
+
+                    if len(pending_failures) > 1:
+                        transition_type = RULE_MULTI_FAILURE_FALLBACK
+                        reason = (
+                            f"Multiple failed authentication attempts ({len(pending_failures)}) including stronger method "
+                            f"'{strongest_failed_event.authentication_method}' ({strongest_failed_assurance.name}) "
+                            f"followed by successful fallback to lower-assurance method '{current_method}' "
+                            f"({current_assurance.name}){unknown_suffix}."
+                        )
+                    else:
+                        transition_type = RULE_FAILED_STRONG_SUCCESS_WEAK
+                        reason = (
+                            f"Failed strong authentication ({strongest_failed_event.authentication_method} - {strongest_failed_assurance.name}) "
+                            f"followed by successful fallback to lower-assurance method "
+                            f"({current_method} - {current_assurance.name}){unknown_suffix}."
+                        )
+
+                    detected_drift = DriftResult(
+                        drift_detected=True,
+                        reason=reason,
+                        previous_method=strongest_failed_event.authentication_method,
+                        previous_assurance=strongest_failed_assurance,
+                        current_method=current_method,
+                        current_assurance=current_assurance,
+                        transition_type=transition_type
+                    )
+                elif current_assurance.value > strongest_failed_assurance.value:
+                    step_up_observed = True
+
+                # Attempt concluded with a success; clear pending failures
+                pending_failures.clear()
+
+            else:
+                # No pending failure: consecutive successful authentications
+                if last_successful_event:
+                    last_assurance, last_is_rec = self.assurance_model.get_assurance_level(
+                        last_successful_event.authentication_method
+                    )
+                    if current_assurance.value > last_assurance.value:
+                        step_up_observed = True
+                    elif current_assurance.value < last_assurance.value:
+                        assurance_drop = last_assurance.value - current_assurance.value
+                        if assurance_drop >= self.config.min_assurance_drop and self.config.detect_any_downgrade and not self.config.require_prior_failure:
+                            unknown_notes = []
+                            if not last_is_rec:
+                                unknown_notes.append(f"'{last_successful_event.authentication_method}' is an unknown method evaluated defensively as LOW assurance")
+                            if not is_recognized:
+                                unknown_notes.append(f"'{current_method}' is an unknown method evaluated defensively as LOW assurance")
+                            unknown_suffix = f" (Note: {'; '.join(unknown_notes)})." if unknown_notes else ""
+
+                            detected_drift = DriftResult(
+                                drift_detected=True,
+                                reason=(
+                                    f"Authentication assurance decreased from {last_assurance.name} "
+                                    f"({last_successful_event.authentication_method}) to {current_assurance.name} "
+                                    f"({current_method}){unknown_suffix}."
+                                ),
+                                previous_method=last_successful_event.authentication_method,
+                                previous_assurance=last_assurance,
+                                current_method=current_method,
+                                current_assurance=current_assurance,
+                                transition_type=RULE_DOWNGRADE_GENERAL
+                            )
+
+            last_successful_event = current_event
+
+        # 5. Return evaluation outcome
+        if detected_drift:
+            return detected_drift
+
+        # Check for repeated failures without assurance downgrade
+        if total_failures >= 2:
             return DriftResult(
                 drift_detected=False,
-                reason=f"Repeated authentication failures ({failure_count}) observed without assurance downgrade.",
+                reason=f"Repeated authentication failures ({total_failures}) observed without assurance downgrade.",
                 transition_type=RULE_REPEATED_FAILURES_SAME_METHOD
             )
 
-        # Check if step-up authentication occurred
+        # Check for step-up authentication
         if step_up_observed and self.config.track_step_ups:
             return DriftResult(
                 drift_detected=False,

@@ -29,6 +29,7 @@ class AuthenticationEvent:
     # Contextual information (nullable if unavailable in the raw event)
     device_id: Optional[str] = None
     location: Optional[str] = None
+    ip_address: Optional[str] = None
     authenticator_id: Optional[str] = None
     session_id: Optional[str] = None
     source_provider: Optional[str] = "keycloak"

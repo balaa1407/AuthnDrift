@@ -14,6 +14,7 @@ class OktaEventNormalizer(BaseEventNormalizer):
     """
     Normalizes Okta System Log JSON events into AuthenticationEvent.
     Adheres strictly to the same common normalized schema.
+    Separates IP address from geographic location strictly without fabrication.
     """
 
     METHOD_MAPPING = {
@@ -91,6 +92,14 @@ class OktaEventNormalizer(BaseEventNormalizer):
         else:
             device_id = None
 
+        # Extract IP address separately
+        raw_ip = client.get("ipAddress") or raw.get("ipAddress")
+        if raw_ip:
+            ip_address = str(raw_ip).strip()
+        else:
+            ip_address = None
+
+        # Extract geographic location strictly - NEVER fall back to IP address
         geo = client.get("geographicalContext") if isinstance(client.get("geographicalContext"), dict) else {}
         city = geo.get("city")
         country = geo.get("country")
@@ -98,8 +107,8 @@ class OktaEventNormalizer(BaseEventNormalizer):
             location = f"{city}, {country}"
         elif city:
             location = str(city)
-        elif raw.get("ipAddress"):
-            location = str(raw.get("ipAddress"))
+        elif raw.get("location"):
+            location = str(raw.get("location")).strip()
         else:
             location = None
 
@@ -134,8 +143,8 @@ class OktaEventNormalizer(BaseEventNormalizer):
             outcome=outcome,
             device_id=device_id,
             location=location,
+            ip_address=ip_address,
             authenticator_id=authenticator_id,
             session_id=session_id,
             source_provider="okta"
         )
-

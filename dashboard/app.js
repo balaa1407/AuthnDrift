@@ -2,8 +2,8 @@
  * AuthDrift Frontend Application
  * Interacts with AuthDrift FastAPI backend to render:
  * A. Authentication Overview Metrics
- * B. Authentication Journey Timelines
- * C. Explainable Security Intelligence & Alerts
+ * B. Authentication Journey Timelines with IP & Context separation
+ * C. Explainable Security Intelligence & Alerts (Drift vs. Contextual Anomaly)
  * D. Filtering, Scenario Switching & Raw Log Ingestion
  */
 
@@ -11,12 +11,12 @@ let allJourneys = [];
 let allAlerts = [];
 let selectedJourneyIndex = 0;
 
-// Method assurance helper aligned with NIST SP 800-63B
+// Method assurance helper aligned with NIST SP 800-63B relative model
 function getAssuranceLevel(method) {
   if (!method) return 'LOW';
   const m = method.toLowerCase();
-  if (['passkey', 'fido2', 'webauthn', 'hardware_token', 'client_cert'].includes(m)) return 'HIGH';
-  if (['totp', 'authenticator_app', 'otp', 'sms_otp', 'sms', 'email_otp', 'push_notification'].includes(m)) return 'MEDIUM';
+  if (['passkey', 'fido2', 'webauthn', 'hardware_token', 'client_cert', 'security_key', 'u2f'].includes(m)) return 'HIGH';
+  if (['totp', 'authenticator_app', 'otp', 'sms_otp', 'sms', 'email_otp', 'push_notification', 'push'].includes(m)) return 'MEDIUM';
   return 'LOW';
 }
 
@@ -132,10 +132,13 @@ function renderJourneys(filteredJourneys) {
         contextTagsHtml += `<span class="context-tag" title="Device">💻 ${ev.device_id}</span>`;
       }
       if (ev.location) {
-        contextTagsHtml += `<span class="context-tag" title="Location">📍 ${ev.location}</span>`;
+        contextTagsHtml += `<span class="context-tag" title="Geographic Location">📍 ${ev.location}</span>`;
+      }
+      if (ev.ip_address) {
+        contextTagsHtml += `<span class="context-tag" title="IP Address">🌐 ${ev.ip_address}</span>`;
       }
       if (ev.authenticator_id) {
-        contextTagsHtml += `<span class="context-tag" title="Authenticator">🔑 ${ev.authenticator_id}</span>`;
+        contextTagsHtml += `<span class="context-tag" title="Authenticator ID">🔑 ${ev.authenticator_id}</span>`;
       }
       if (!contextTagsHtml) {
         contextTagsHtml = `<span class="context-tag" style="opacity: 0.5;">Context Unavailable</span>`;
@@ -165,11 +168,17 @@ function renderJourneys(filteredJourneys) {
       `;
     }
 
+    const alertType = matchedAlert?.alert_type || (hasDrift ? 'ASSURANCE_DRIFT' : 'INFORMATIONAL');
+    let alertTypeClass = 'alert-type-info';
+    if (alertType === 'ASSURANCE_DRIFT') alertTypeClass = 'alert-type-drift';
+    else if (alertType === 'CONTEXTUAL_ANOMALY') alertTypeClass = 'alert-type-context';
+
     card.innerHTML = `
       <div class="journey-header">
         <div class="user-badge">
           <span class="icon">👤</span>
           <span>${journey.user_id}</span>
+          <span class="badge-alert-type ${alertTypeClass}">${alertType.replace('_', ' ')}</span>
           ${journey.session_id ? `<span class="badge" style="font-size: 0.65rem;">${journey.session_id}</span>` : ''}
         </div>
         <div class="time-range">${formatDate(firstTime)} - ${formatDate(lastTime)} (${journey.event_count} events)</div>
@@ -209,11 +218,18 @@ function renderAlertDetails(alert, journey) {
   const risk = alert.risk_assessment || { score: 0, severity: 'LOW', triggered_factors: [], factor_breakdown: {} };
   const sevClass = `risk-${risk.severity ? risk.severity.toLowerCase() : 'low'}`;
   const evidence = alert.context_evidence || {};
+  const drift = alert.drift_result || {};
 
   const formatFlag = (val) => {
     if (val === true) return '<span class="evidence-val flagged">⚠️ Confirmed New</span>';
     if (val === false) return '<span class="evidence-val">✅ Known / Baseline</span>';
-    return '<span class="evidence-val" style="color: var(--text-muted);">Unavailable</span>';
+    return '<span class="evidence-val" style="color: var(--text-muted);">Unavailable / Unconfigured</span>';
+  };
+
+  const formatLocStatus = (status) => {
+    if (status === 'KNOWN') return '<span class="loc-status-badge loc-status-known">✅ KNOWN</span>';
+    if (status === 'NEW') return '<span class="loc-status-badge loc-status-new">⚠️ NEW</span>';
+    return '<span class="loc-status-badge loc-status-unknown">ℹ️ UNKNOWN (Insufficient History)</span>';
   };
 
   let factorListHtml = '';
@@ -230,16 +246,49 @@ function renderAlertDetails(alert, journey) {
     factorListHtml = `<li class="factor-item" style="color: var(--text-muted);">No elevated risk factors triggered.</li>`;
   }
 
+  const alertType = alert.alert_type || (alert.drift_detected ? 'ASSURANCE_DRIFT' : 'INFORMATIONAL');
+  let alertTypeClass = 'alert-type-info';
+  if (alertType === 'ASSURANCE_DRIFT') alertTypeClass = 'alert-type-drift';
+  else if (alertType === 'CONTEXTUAL_ANOMALY') alertTypeClass = 'alert-type-context';
+
   panel.innerHTML = `
     <div class="alert-header">
       <div>
-        <h3 style="color: #ffffff; font-size: 1.1rem; font-weight: 700;">Journey: ${alert.user_id}</h3>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+          <h3 style="color: #ffffff; font-size: 1.15rem; font-weight: 700;">User: ${alert.user_id}</h3>
+          <span class="badge-alert-type ${alertTypeClass}">${alertType.replace('_', ' ')}</span>
+        </div>
         <p style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">
-          Alert ID: ${alert.alert_id} &bull; Actionable: ${alert.is_actionable ? '🚨 Yes' : 'ℹ️ Informational'}
+          Alert ID: ${alert.alert_id} &bull; Priority: ${alert.priority || 'INFORMATIONAL'} &bull; Actionable: ${alert.is_actionable ? '🚨 Yes' : 'ℹ️ No'}
         </p>
       </div>
       <div class="risk-badge ${sevClass}">
         ${risk.severity} RISK (${risk.score}/100)
+      </div>
+    </div>
+
+    <div>
+      <h4 class="section-title">Assurance Transition & Drift Analysis</h4>
+      <div class="transition-grid">
+        <div class="transition-node">
+          <span class="transition-node-label">Prior Method & Assurance</span>
+          <span class="transition-node-val">
+            ${drift.previous_method || 'None'}
+            ${drift.previous_assurance ? `(${drift.previous_assurance})` : ''}
+          </span>
+        </div>
+        <div class="transition-arrow">➔</div>
+        <div class="transition-node">
+          <span class="transition-node-label">Subsequent Method & Assurance</span>
+          <span class="transition-node-val">
+            ${drift.current_method || 'None'}
+            ${drift.current_assurance ? `(${drift.current_assurance})` : ''}
+          </span>
+        </div>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+        <strong>Detection Rule:</strong> <code>${drift.transition_type || 'NORMAL_JOURNEY'}</code> &bull;
+        <strong>Status:</strong> ${alert.drift_detected ? '<span style="color: #fda4af; font-weight: 700;">DRIFT DETECTED</span>' : '<span style="color: #34d399; font-weight: 700;">NO DRIFT</span>'}
       </div>
     </div>
 
@@ -251,26 +300,40 @@ function renderAlertDetails(alert, journey) {
     </div>
 
     <div>
-      <h4 class="section-title">Contextual Evidence Signals</h4>
+      <h4 class="section-title">Contextual Evidence & Baselines</h4>
       <div class="context-evidence-grid">
         <div class="evidence-item">
-          <div class="evidence-key">Device Anomaly</div>
+          <div class="evidence-key">Device Status</div>
           ${formatFlag(evidence.is_new_device)}
-          ${evidence.device_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">${evidence.device_id}</div>` : ''}
+          ${evidence.device_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">ID: ${evidence.device_id}</div>` : ''}
         </div>
+
         <div class="evidence-item">
-          <div class="evidence-key">Location Anomaly</div>
-          ${formatFlag(evidence.is_location_changed)}
-          ${evidence.location ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">${evidence.location}</div>` : ''}
+          <div class="evidence-key">Location Status & Baseline</div>
+          ${formatLocStatus(evidence.location_status)}
+          <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
+            Observed: <strong>${evidence.location || 'Unavailable'}</strong><br>
+            Primary Baseline: <strong>${evidence.primary_location || 'Not Established'}</strong>
+          </div>
         </div>
+
         <div class="evidence-item">
-          <div class="evidence-key">Rogue Authenticator Registered</div>
-          ${evidence.authenticator_registered ? '<span class="evidence-val flagged">⚠️ Persistence Flag</span>' : '<span class="evidence-val">None</span>'}
+          <div class="evidence-key">IP Address</div>
+          <div class="evidence-val" style="font-family: var(--font-mono); font-size: 0.8rem;">
+            ${evidence.ip_address ? `🌐 ${evidence.ip_address}` : '<span style="color: var(--text-muted); font-weight: normal;">Unavailable</span>'}
+          </div>
         </div>
+
         <div class="evidence-item">
+          <div class="evidence-key">Authenticator Registration</div>
+          ${evidence.authenticator_registered ? '<span class="evidence-val flagged">⚠️ Explicitly Registered</span>' : '<span class="evidence-val">None (Usage Only)</span>'}
+          ${evidence.authenticator_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">Key ID: ${evidence.authenticator_id}</div>` : ''}
+        </div>
+
+        <div class="evidence-item" style="grid-column: span 2;">
           <div class="evidence-key">Prior Failures Count</div>
           <span class="evidence-val ${evidence.prior_failures_count > 0 ? 'flagged' : ''}">
-            ${evidence.prior_failures_count} attempt(s)
+            ${evidence.prior_failures_count} attempt(s) observed in journey
           </span>
         </div>
       </div>
@@ -288,6 +351,7 @@ function renderAlertDetails(alert, journey) {
 // 5. Filter Logic (Section D)
 function applyFilters() {
   const userQuery = document.getElementById('filter-user').value.trim().toLowerCase();
+  const alertTypeFilter = document.getElementById('filter-alert-type') ? document.getElementById('filter-alert-type').value : '';
   const outcomeFilter = document.getElementById('filter-outcome').value;
   const severityFilter = document.getElementById('filter-severity').value;
   const driftOnly = document.getElementById('filter-drift-only').checked;
@@ -308,6 +372,11 @@ function applyFilters() {
     const matchedAlert = allAlerts.find(a => 
       a.user_id === journey.user_id && (a.session_id === journey.session_id || !journey.session_id)
     ) || allAlerts[idx];
+
+    // Alert Type filter
+    if (alertTypeFilter && matchedAlert?.alert_type !== alertTypeFilter) {
+      return false;
+    }
 
     // Severity filter
     if (severityFilter && matchedAlert?.risk_assessment?.severity !== severityFilter) {
@@ -340,12 +409,18 @@ document.getElementById('btn-load-scenario').addEventListener('click', async () 
 
 // 7. Filters Event Listeners
 document.getElementById('filter-user').addEventListener('input', applyFilters);
+if (document.getElementById('filter-alert-type')) {
+  document.getElementById('filter-alert-type').addEventListener('change', applyFilters);
+}
 document.getElementById('filter-outcome').addEventListener('change', applyFilters);
 document.getElementById('filter-severity').addEventListener('change', applyFilters);
 document.getElementById('filter-drift-only').addEventListener('change', applyFilters);
 
 document.getElementById('btn-reset-filters').addEventListener('click', () => {
   document.getElementById('filter-user').value = '';
+  if (document.getElementById('filter-alert-type')) {
+    document.getElementById('filter-alert-type').value = '';
+  }
   document.getElementById('filter-outcome').value = '';
   document.getElementById('filter-severity').value = '';
   document.getElementById('filter-drift-only').checked = false;
@@ -364,13 +439,15 @@ document.getElementById('btn-sample-kc').addEventListener('click', () => {
       "id": "kc-demo-01",
       "time": Date.now() - 30000,
       "type": "LOGIN_ERROR",
-      "details": { "username": "demo_user", "auth_method": "passkey", "error": "user_cancelled" }
+      "ipAddress": "192.168.1.100",
+      "details": { "username": "demo_user", "auth_method": "passkey", "error": "user_cancelled", "location": "Bangalore, IN" }
     },
     {
       "id": "kc-demo-02",
       "time": Date.now() - 10000,
       "type": "LOGIN",
-      "details": { "username": "demo_user", "auth_method": "password" }
+      "ipAddress": "192.168.1.100",
+      "details": { "username": "demo_user", "auth_method": "password", "location": "Bangalore, IN" }
     }
   ], null, 2);
 });
@@ -384,6 +461,7 @@ document.getElementById('btn-sample-okta').addEventListener('click', () => {
       "eventType": "user.authentication.auth_via_mfa",
       "outcome": { "result": "FAILURE" },
       "actor": { "alternateId": "demo_user@company.com" },
+      "client": { "ipAddress": "203.0.113.19", "geographicalContext": { "city": "San Francisco", "country": "United States" } },
       "authenticationContext": { "credentialProvider": "FIDO2 (WebAuthn)" }
     },
     {
@@ -392,6 +470,7 @@ document.getElementById('btn-sample-okta').addEventListener('click', () => {
       "eventType": "user.authentication.authenticate",
       "outcome": { "result": "SUCCESS" },
       "actor": { "alternateId": "demo_user@company.com" },
+      "client": { "ipAddress": "203.0.113.19", "geographicalContext": { "city": "San Francisco", "country": "United States" } },
       "authenticationContext": { "credentialProvider": "PASSWORD" }
     }
   ], null, 2);
@@ -425,4 +504,3 @@ document.getElementById('btn-submit-ingest').addEventListener('click', async () 
 
 // Initial boot
 loadData();
-

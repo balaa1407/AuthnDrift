@@ -51,11 +51,15 @@ class ContextEvidence:
     """
     Contextual signals observed during journey analysis.
     Explicitly tracks whether signals were confirmed, absent, or unavailable.
+    Preserves primary baseline location and observed location separately.
     """
     is_new_device: Optional[bool] = None
     device_id: Optional[str] = None
     is_location_changed: Optional[bool] = None
     location: Optional[str] = None
+    primary_location: Optional[str] = None
+    location_status: str = "UNKNOWN"
+    ip_address: Optional[str] = None
     authenticator_registered: Optional[bool] = None
     authenticator_id: Optional[str] = None
     prior_failures_count: int = 0
@@ -78,6 +82,7 @@ class RiskAssessment:
 class SecurityAlert:
     """
     Comprehensive explainable security alert for dashboard and SIEM export.
+    Distinguishes ASSURANCE_DRIFT from CONTEXTUAL_ANOMALY.
     """
     alert_id: str
     user_id: str
@@ -91,3 +96,4 @@ class SecurityAlert:
     is_actionable: bool
     session_id: Optional[str] = None
     priority: str = "INFORMATIONAL"
+    alert_type: str = "INFORMATIONAL"
