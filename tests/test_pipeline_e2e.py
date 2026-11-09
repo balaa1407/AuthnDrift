@@ -34,20 +34,25 @@ class TestPipelineE2E:
         assert alice_alert.drift_detected is False
         assert alice_alert.risk_assessment.severity == RiskSeverity.LOW
 
-        # Bob: TC02 - Passkey Failure -> Password Fallback
+        # Bob: TC02 - Passkey Failure -> Password Fallback on Same Known Device & IP (Client Continuity Exemption)
         assert "bob" in alert_map
         bob_alert = alert_map["bob"]
-        assert bob_alert.drift_detected is True
+        assert bob_alert.is_recovery_candidate is True
+        assert bob_alert.drift_detected is False
+        assert bob_alert.alert_type == "INFORMATIONAL"
         assert bob_alert.drift_result.current_method == "password"
         assert bob_alert.drift_result.previous_method == "passkey"
-        assert bob_alert.risk_assessment.score >= 40
+        assert bob_alert.risk_assessment.score == 0
 
-        # Carol: TC03 - Passkey Failure -> Password Success on NEW Device
+        # Carol: TC03 - Passkey Failure -> Password Success on NEW Device (True Attack / Drift)
         assert "carol" in alert_map
         carol_alert = alert_map["carol"]
+        assert carol_alert.is_recovery_candidate is False
         assert carol_alert.drift_detected is True
+        assert carol_alert.alert_type == "ASSURANCE_DRIFT"
         assert carol_alert.context_evidence.is_new_device is True
         assert carol_alert.risk_assessment.severity in [RiskSeverity.HIGH, RiskSeverity.CRITICAL]
+        assert carol_alert.risk_assessment.score >= 70
 
         # Eve: TC05 - Downgrade followed by Authenticator Registration
         assert "eve" in alert_map

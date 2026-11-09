@@ -8,8 +8,12 @@ on:
 
 jobs:
   test:
-    name: Run Test Suite
+    name: Run Test Suite & Static Checks
     runs-on: ubuntu-latest
+    env:
+      AUTH_DRIFT_ENABLE_THREAT_INTEL: "true"
+      ABUSEIPDB_API_KEY: ""
+      AUTH_DRIFT_IP_CACHE_TTL: "86400"
 
     steps:
       - name: Check out repository
@@ -26,7 +30,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt pytest
 
-      - name: Run Pytest Suite
+      - name: Validate syntax and imports
+        run: |
+          python -m compileall backend/ keycloak/ tests/
+
+      - name: Run Pytest Suite (Unit, E2E, Simulation & Threat Intel)
         run: |
           pytest tests/ -v
 
+  docker-build:
+    name: Validate Docker Build & Compose
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration
+        run: |
+          docker compose config
+
+      - name: Build AuthDrift Docker Image
+        run: |
+          docker build -t authdrift:ci .

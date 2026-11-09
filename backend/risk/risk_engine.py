@@ -1,7 +1,7 @@
 """
 AuthDrift: Risk Scoring Engine.
 Computes transparent, reproducible, non-duplicative risk scores based on
-drift results and contextual evidence.
+drift results, contextual evidence, and IP threat intelligence.
 
 Mathematical Scoring Approach:
 The risk score S in [0, 100] is computed as an additive heuristic:
@@ -40,9 +40,11 @@ class RiskEngine:
         score = 0
         triggered_factors: List[str] = []
         breakdown: Dict[str, int] = {}
+        is_recovery = getattr(context_evidence, "is_recovery_candidate", False)
 
         # Factor 1: Assurance Downgrade
-        if drift_result.drift_detected and drift_result.previous_assurance and drift_result.current_assurance:
+        # Bypassed if journey is classified as a legitimate recovery candidate on verified known device & same IP
+        if not is_recovery and drift_result.drift_detected and drift_result.previous_assurance and drift_result.current_assurance:
             prev = drift_result.previous_assurance
             curr = drift_result.current_assurance
 
@@ -66,14 +68,17 @@ class RiskEngine:
                 breakdown[factor_name] = pts
 
         # Factor 2: Preceding Strong Authentication Failure
-        # Triggered when strong authentication failed prior to fallback/downgrade
+        # Triggered when strong authentication failed prior to fallback/downgrade (bypassed on legitimate recovery)
         has_failed_strong = (
-            drift_result.transition_type == RULE_FAILED_STRONG_SUCCESS_WEAK
-            or (
-                drift_result.transition_type == RULE_MULTI_FAILURE_FALLBACK
-                and drift_result.previous_assurance == AssuranceLevel.HIGH
+            not is_recovery
+            and (
+                drift_result.transition_type == RULE_FAILED_STRONG_SUCCESS_WEAK
+                or (
+                    drift_result.transition_type == RULE_MULTI_FAILURE_FALLBACK
+                    and drift_result.previous_assurance == AssuranceLevel.HIGH
+                )
+                or ("Failed strong authentication" in (drift_result.reason or ""))
             )
-            or ("Failed strong authentication" in (drift_result.reason or ""))
         )
 
         if has_failed_strong:
@@ -115,12 +120,41 @@ class RiskEngine:
             triggered_factors.append(factor_name)
             breakdown[factor_name] = pts
 
+        # Factor 7: IP Threat Intelligence Reputation
+        if getattr(context_evidence, "ip_reputation", None) is not None:
+            rep = context_evidence.ip_reputation
+            if rep.status == "KNOWN_MALICIOUS" or (
+                rep.abuse_confidence_score is not None
+                and rep.abuse_confidence_score >= self.config.abuse_score_threshold_malicious
+            ):
+                score_ratio = (rep.abuse_confidence_score or 100) / 100.0
+                pts = max(15, min(self.config.weight_malicious_ip, round(self.config.weight_malicious_ip * score_ratio)))
+                score += pts
+                score_display = f"{rep.abuse_confidence_score}%" if rep.abuse_confidence_score is not None else "N/A"
+                factor_name = f"Malicious IP Reputation ({rep.ip_address} - Abuse Score {score_display})"
+                triggered_factors.append(factor_name)
+                breakdown[factor_name] = pts
+            elif rep.status == "SUSPICIOUS" or (
+                rep.abuse_confidence_score is not None
+                and rep.abuse_confidence_score >= self.config.abuse_score_threshold_suspicious
+            ):
+                score_ratio = (rep.abuse_confidence_score or 20) / 100.0
+                pts = max(5, min(self.config.weight_suspicious_ip, round(self.config.weight_suspicious_ip * score_ratio * 2)))
+                score += pts
+                score_display = f"{rep.abuse_confidence_score}%" if rep.abuse_confidence_score is not None else "N/A"
+                factor_name = f"Suspicious IP Reputation ({rep.ip_address} - Abuse Score {score_display})"
+                triggered_factors.append(factor_name)
+                breakdown[factor_name] = pts
+
         # Cap score between 0 and 100
         final_score = min(100, max(0, score))
         severity = self.config.get_severity(final_score)
 
         if not triggered_factors:
-            rationale = "Normal authentication journey with no anomalous degradation or suspicious context."
+            if is_recovery:
+                rationale = "Legitimate authentication recovery candidate on verified known device and consistent IP address; no assurance drift penalty applied."
+            else:
+                rationale = "Normal authentication journey with no anomalous degradation or suspicious context."
         else:
             rationale = (
                 f"Assessed as {severity.value} risk (Score {final_score}/100) based on {len(triggered_factors)} "

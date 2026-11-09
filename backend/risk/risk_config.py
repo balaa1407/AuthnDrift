@@ -26,6 +26,12 @@ class RiskEngineConfig:
     weight_location_change: int = 15
     weight_authenticator_registered: int = 25  # High-priority persistence indicator
 
+    # IP Threat Intelligence Weights (Bounded Contribution)
+    weight_malicious_ip: int = 25
+    weight_suspicious_ip: int = 10
+    abuse_score_threshold_malicious: int = 50
+    abuse_score_threshold_suspicious: int = 20
+
     # Severity Threshold Boundaries
     threshold_low_max: int = 29
     threshold_medium_max: int = 59

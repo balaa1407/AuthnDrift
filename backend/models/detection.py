@@ -1,7 +1,7 @@
 """
 AuthDrift: Detection and Security Alert Data Contracts.
 Standardized output models for drift detection, contextual correlation,
-risk assessment, and explainable security alerts.
+risk assessment, explainable security alerts, and IP threat intelligence.
 """
 
 from dataclasses import dataclass, field
@@ -9,6 +9,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from backend.models.assurance import AssuranceLevel
+from backend.threat_intelligence.base import IPReputationResult
 
 
 class RiskSeverity(str, Enum):
@@ -57,10 +58,13 @@ class ContextAnomaly:
     """
     source_event_id: Optional[str]
     target_event_id: Optional[str]
-    anomaly_type: str  # e.g., LOCATION_CHANGE, IP_CHANGE, DEVICE_CHANGE
+    anomaly_type: str  # e.g., LOCATION_CHANGE, IP_CHANGE, DEVICE_CHANGE, IMPOSSIBLE_TRAVEL_VELOCITY
     previous_value: Optional[str]
     current_value: Optional[str]
     lifecycle_stage: str  # e.g., AUTHENTICATION, SESSION_LIFECYCLE, ACCOUNT_LIFECYCLE
+    velocity_kmh: Optional[float] = None
+    is_impossible_travel: bool = False
+    subnet_continuity: Optional[bool] = None
 
 
 @dataclass
@@ -69,7 +73,8 @@ class ContextEvidence:
     Contextual signals observed during journey analysis.
     Explicitly tracks whether signals were confirmed, absent, or unavailable.
     Preserves primary baseline location and observed location separately.
-    Includes structured discrete anomalies across sequential transitions.
+    Includes structured discrete anomalies across sequential transitions
+    and external IP threat intelligence reputation telemetry.
     """
     is_new_device: Optional[bool] = None
     device_id: Optional[str] = None
@@ -81,8 +86,10 @@ class ContextEvidence:
     authenticator_registered: Optional[bool] = None
     authenticator_id: Optional[str] = None
     prior_failures_count: int = 0
+    is_recovery_candidate: bool = False
     evidence_notes: List[str] = field(default_factory=list)
     context_anomalies: List[ContextAnomaly] = field(default_factory=list)
+    ip_reputation: Optional[IPReputationResult] = None
 
 
 @dataclass
@@ -103,7 +110,7 @@ class SecurityAlert:
     Comprehensive explainable security alert for dashboard and SIEM export.
     Distinguishes ASSURANCE_DRIFT from CONTEXTUAL_ANOMALY.
     Explicitly cites qualifying source and target events and records
-    discrete context anomalies and failed authentications.
+    discrete context anomalies, failed authentications, and IP threat intelligence.
     """
     alert_id: str
     user_id: str
@@ -118,7 +125,11 @@ class SecurityAlert:
     session_id: Optional[str] = None
     priority: str = "INFORMATIONAL"
     alert_type: str = "INFORMATIONAL"
+    is_recovery_candidate: bool = False
     source_event_id: Optional[str] = None
     target_event_id: Optional[str] = None
     context_anomalies: List[ContextAnomaly] = field(default_factory=list)
     failed_authentications: List[Dict[str, Any]] = field(default_factory=list)
+    ip_reputation: Optional[IPReputationResult] = None
+    actionable_remediation: List[str] = field(default_factory=list)
+    cryptographic_boundary: Optional[str] = None

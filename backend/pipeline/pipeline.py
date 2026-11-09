@@ -5,7 +5,8 @@ Directly integrates:
 2. Event Deduplication
 3. Authentication Journey Reconstruction
 4. Per-User Location Baselining
-5. AuthDriftEngine (Detection, Correlation, Risk Scoring, Alerts)
+5. IP Threat Intelligence Reputation
+6. AuthDriftEngine (Detection, Correlation, Risk Scoring, Alerts)
 """
 
 from dataclasses import dataclass, field
@@ -21,6 +22,7 @@ from backend.normalization.deduplicator import EventDeduplicator
 from backend.journey.reconstructor import JourneyReconstructor
 from backend.correlation.location_profiler import LocationProfiler
 from backend.assurance.assurance_assignment import assign_event_assurance
+from backend.threat_intelligence.reputation_service import IPReputationService
 
 
 @dataclass
@@ -95,6 +97,9 @@ class PipelineExecutionResult:
                         }
                         for anom in getattr(self.alerts[i], "context_anomalies", [])
                     ] if i < len(self.alerts) else [],
+                    "ip_reputation": self.alerts[i].ip_reputation.to_dict() if (
+                        i < len(self.alerts) and getattr(self.alerts[i], "ip_reputation", None) is not None
+                    ) else None,
                     "event_count": len(j.events),
                     "start_time": j.events[0].timestamp.isoformat() if j.events else None,
                     "end_time": j.events[-1].timestamp.isoformat() if j.events else None,
@@ -127,6 +132,7 @@ class PipelineExecutionResult:
                     "timestamp": a.timestamp.isoformat() if a.timestamp else None,
                     "drift_detected": a.drift_detected,
                     "alert_type": getattr(a, "alert_type", "INFORMATIONAL"),
+                    "is_recovery_candidate": getattr(a, "is_recovery_candidate", False),
                     "priority": getattr(a, "priority", "INFORMATIONAL"),
                     "is_actionable": a.is_actionable,
                     "source_event_id": getattr(a, "source_event_id", None),
@@ -134,6 +140,8 @@ class PipelineExecutionResult:
                     "methods_involved": a.methods_involved,
                     "explanation": a.explanation,
                     "session_id": a.session_id,
+                    "actionable_remediation": getattr(a, "actionable_remediation", []),
+                    "cryptographic_boundary": getattr(a, "cryptographic_boundary", None),
                     "context_anomalies": [
                         {
                             "source_event_id": anom.source_event_id,
@@ -141,11 +149,15 @@ class PipelineExecutionResult:
                             "anomaly_type": anom.anomaly_type,
                             "previous_value": anom.previous_value,
                             "current_value": anom.current_value,
-                            "lifecycle_stage": anom.lifecycle_stage
+                            "lifecycle_stage": anom.lifecycle_stage,
+                            "velocity_kmh": getattr(anom, "velocity_kmh", None),
+                            "is_impossible_travel": getattr(anom, "is_impossible_travel", False),
+                            "subnet_continuity": getattr(anom, "subnet_continuity", None)
                         }
                         for anom in getattr(a, "context_anomalies", [])
                     ],
                     "failed_authentications": getattr(a, "failed_authentications", []),
+                    "ip_reputation": a.ip_reputation.to_dict() if getattr(a, "ip_reputation", None) is not None else None,
                     "drift_result": {
                         "drift_detected": a.drift_result.drift_detected,
                         "reason": a.drift_result.reason,
@@ -167,6 +179,7 @@ class PipelineExecutionResult:
                         "ip_address": getattr(a.context_evidence, "ip_address", None),
                         "authenticator_registered": a.context_evidence.authenticator_registered,
                         "authenticator_id": a.context_evidence.authenticator_id,
+                        "is_recovery_candidate": getattr(a.context_evidence, "is_recovery_candidate", False),
                         "prior_failures_count": a.context_evidence.prior_failures_count,
                         "evidence_notes": a.context_evidence.evidence_notes,
                         "context_anomalies": [
@@ -176,10 +189,14 @@ class PipelineExecutionResult:
                                 "anomaly_type": anom.anomaly_type,
                                 "previous_value": anom.previous_value,
                                 "current_value": anom.current_value,
-                                "lifecycle_stage": anom.lifecycle_stage
+                                "lifecycle_stage": anom.lifecycle_stage,
+                                "velocity_kmh": getattr(anom, "velocity_kmh", None),
+                                "is_impossible_travel": getattr(anom, "is_impossible_travel", False),
+                                "subnet_continuity": getattr(anom, "subnet_continuity", None)
                             }
                             for anom in getattr(a.context_evidence, "context_anomalies", [])
-                        ]
+                        ],
+                        "ip_reputation": a.context_evidence.ip_reputation.to_dict() if getattr(a.context_evidence, "ip_reputation", None) is not None else None,
                     },
                     "risk_assessment": {
                         "score": a.risk_assessment.score,
@@ -204,9 +221,11 @@ class AuthDriftPipeline:
         engine: Optional[AuthDriftEngine] = None,
         reconstructor: Optional[JourneyReconstructor] = None,
         deduplicator: Optional[EventDeduplicator] = None,
-        location_profiler: Optional[LocationProfiler] = None
+        location_profiler: Optional[LocationProfiler] = None,
+        reputation_service: Optional[IPReputationService] = None
     ):
-        self.engine = engine or AuthDriftEngine()
+        self.reputation_service = reputation_service or IPReputationService()
+        self.engine = engine or AuthDriftEngine(reputation_service=self.reputation_service)
         self.reconstructor = reconstructor or JourneyReconstructor()
         self.deduplicator = deduplicator or EventDeduplicator()
         self.location_profiler = location_profiler or LocationProfiler(min_successful_observations=2)
@@ -216,8 +235,8 @@ class AuthDriftPipeline:
             "okta": OktaEventNormalizer()
         }
 
-        # Baseline contextual baseline profiles for evaluation
-        self.known_devices: Set[str] = {"corporate-macbook-01", "pixel-9-pro", "laptop-01", "MacBookPro18,1"}
+        # Baseline contextual baseline profiles for evaluation (aligned with test_scenarios baseline)
+        self.known_devices: Set[str] = {"corporate-macbook-01", "pixel-9-pro", "laptop-01"}
         self.known_locations: Optional[Set[str]] = None
         self.known_authenticators: Set[str] = {"corporate-yubikey-01", "key-01"}
 
@@ -241,8 +260,9 @@ class AuthDriftPipeline:
         2. Deduplication
         3. Journey Reconstruction
         4. Per-User, Per-Journey Historical Location Baselining
-        5. AuthDriftEngine Detection Evaluation
-        6. Metric Compilation
+        5. IP Threat Intelligence Correlation
+        6. AuthDriftEngine Detection Evaluation
+        7. Metric Compilation
         """
         total_raw = len(raw_events)
         normalizer = self.get_normalizer(provider)
@@ -264,10 +284,7 @@ class AuthDriftPipeline:
         # 3. Journey Reconstruction
         journeys = self.reconstructor.reconstruct_journeys(events_to_process)
 
-        # 4/5. Per-journey, per-user historical location baseline + detection.
-        # The baseline for each journey is built ONLY from that user's successful events
-        # that occurred strictly BEFORE the journey starts, so the login being evaluated
-        # can never become part of its own "known" history.
+        # 4/5. Per-journey, per-user historical location baseline + threat intel + detection.
         alerts: List[SecurityAlert] = []
         for journey in journeys:
             journey_start = journey.events[0].timestamp if journey.events else None
@@ -288,7 +305,8 @@ class AuthDriftPipeline:
                 known_locations=self.known_locations,
                 known_authenticators=self.known_authenticators,
                 location_profiler=journey_profiler,
-                session_id=journey.session_id
+                session_id=journey.session_id,
+                reputation_service=self.reputation_service
             )
             alerts.append(alert)
 
