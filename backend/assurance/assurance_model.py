@@ -124,3 +124,43 @@ class AssuranceModel:
         normalized = method.strip().lower()
         self._mapping[normalized] = level
         self._rationales[normalized] = rationale
+
+    def get_nist_aal(self, method: Optional[str]) -> str:
+        """
+        Returns the corresponding NIST SP 800-63B Authenticator Assurance Level.
+        """
+        if not method:
+            return "AAL1"
+        level, _ = self.get_assurance_level(method)
+        if level == AssuranceLevel.HIGH:
+            return "AAL3"
+        elif level == AssuranceLevel.MEDIUM:
+            return "AAL2"
+        return "AAL1"
+
+    def is_phishing_resistant(self, method: Optional[str]) -> bool:
+        """
+        Indicates whether an authentication method provides verifier-impersonation resistance.
+        Passkeys, FIDO2, WebAuthn, and mTLS client certificates provide origin binding.
+        """
+        if not method:
+            return False
+        clean = method.strip().lower()
+        return clean in {
+            "passkey", "fido2", "webauthn", "hardware_token",
+            "security_key", "u2f", "client_cert", "client_certificate"
+        }
+
+    def get_cryptographic_boundary_transition(
+        self,
+        previous_method: Optional[str],
+        current_method: Optional[str]
+    ) -> str:
+        """
+        Returns a formal cryptographic boundary transition description based on NIST SP 800-63B.
+        """
+        prev_aal = self.get_nist_aal(previous_method)
+        curr_aal = self.get_nist_aal(current_method)
+        prev_pr = "Phishing-Resistant" if self.is_phishing_resistant(previous_method) else "Phishing-Vulnerable"
+        curr_pr = "Phishing-Resistant" if self.is_phishing_resistant(current_method) else "Phishing-Vulnerable"
+        return f"{prev_aal} ({prev_pr} {previous_method or 'Unknown'}) ➔ {curr_aal} ({curr_pr} {current_method or 'Unknown'})"

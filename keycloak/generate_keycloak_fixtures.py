@@ -330,6 +330,42 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
                 "username": "ivan",
                 "auth_method": "totp"
             }
+        },
+
+        # --- TC10: Victor - Known Malicious IP (Threat Intelligence) ---
+        {
+            "id": "kc-evt-victor-01",
+            "time": base_ms + 250000,
+            "type": "LOGIN",
+            "realmId": "authdrift",
+            "clientId": "authdrift-app",
+            "userId": "usr-uuid-victor",
+            "sessionId": "sess-victor-001",
+            "ipAddress": "118.25.6.39",
+            "details": {
+                "username": "victor",
+                "auth_method": "password",
+                "device_id": "unknown-device-01",
+                "location": "Beijing, CN"
+            }
+        },
+
+        # --- TC11: Wendy - Clean Public IP (Threat Intelligence) ---
+        {
+            "id": "kc-evt-wendy-01",
+            "time": base_ms + 260000,
+            "type": "LOGIN",
+            "realmId": "authdrift",
+            "clientId": "authdrift-app",
+            "userId": "usr-uuid-wendy",
+            "sessionId": "sess-wendy-001",
+            "ipAddress": "8.8.8.8",
+            "details": {
+                "username": "wendy",
+                "auth_method": "passkey",
+                "device_id": "corporate-macbook-01",
+                "location": "Mountain View, US"
+            }
         }
     ]
 

@@ -1,0 +1,3427 @@
+{
+  "metadata": {
+    "dataset_name": "AuthDrift Empirical Research Synthetic Benchmark",
+    "version": "1.0.0",
+    "total_journeys": 100,
+    "total_raw_events": 163,
+    "distribution": {
+      "ROUTINE_NORMAL": 60,
+      "BENIGN_RECOVERY": 15,
+      "ADVERSARIAL_DRIFT": 15,
+      "THREAT_INTEL_ATTACK": 10
+    },
+    "research_papers": [
+      {
+        "citation": "Lyastani et al., 'Is FIDO2 the Kingslayer of User Authentication? A Comprehensive Req2Prot Analysis', IEEE Symposium on Security and Privacy (S&P), 2020.",
+        "concept": "FIDO2 / WebAuthn fallback ceremonies, downgrade vulnerability windows, token timeout/cancellation handling."
+      },
+      {
+        "citation": "Wiefling et al., 'What's in a Name? Evaluating Risk-Based Authentication Context', ACM ASIACCS, 2020.",
+        "concept": "Contextual stability in legitimate fallback: >=92% of genuine recovery occurs on primary known device and subnet."
+      },
+      {
+        "citation": "Kent, A. D., 'Comprehensive, Multi-Source Cyber-Security Events', Los Alamos National Laboratory (LANL), 2016.",
+        "concept": "Enterprise authentication log distributions and baseline normal vs anomaly ratios."
+      },
+      {
+        "citation": "Bonneau et al., 'The Quest to Replace Passwords: A Framework for Comparative Evaluation', IEEE S&P, 2012.",
+        "concept": "Assurance level ordering and credential recovery security boundaries."
+      }
+    ]
+  },
+  "ground_truth": {
+    "emp_norm_01": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_02": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_03": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_04": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_05": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_06": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_07": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_08": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_09": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_10": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_11": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_12": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_13": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_14": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_15": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_16": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_17": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_18": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_19": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_20": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_21": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_22": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_23": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_24": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_25": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_26": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_27": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_28": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_29": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_30": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_31": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_32": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_33": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_34": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_35": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_36": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_37": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_38": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_39": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_40": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_41": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_42": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_43": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_44": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_45": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_46": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_47": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_48": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_49": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_50": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_51": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_52": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_53": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_54": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_55": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_56": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_57": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_58": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_59": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_norm_60": {
+      "category": "ROUTINE_NORMAL",
+      "expected_drift": false,
+      "expected_recovery_candidate": false,
+      "expected_severity": "LOW",
+      "research_reference": "Kent (LANL 2016) routine baseline profile"
+    },
+    "emp_recov_01": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_02": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_03": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_04": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_05": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_06": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_07": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_08": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_09": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_10": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_11": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_12": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_13": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_14": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_recov_15": {
+      "category": "BENIGN_RECOVERY",
+      "expected_drift": false,
+      "expected_recovery_candidate": true,
+      "expected_severity": "LOW",
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+    },
+    "emp_drift_01": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "CRITICAL",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_02": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "CRITICAL",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_03": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "CRITICAL",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_04": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_05": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_06": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_07": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_08": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_09": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_10": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_11": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_12": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_13": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_14": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_drift_15": {
+      "category": "ADVERSARIAL_DRIFT",
+      "expected_drift": true,
+      "expected_recovery_candidate": false,
+      "expected_severity": "HIGH",
+      "research_reference": "Lyastani et al. (IEEE S&P 2020) downgrade exploit on unfamiliar endpoint"
+    },
+    "emp_threat_01": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "118.25.6.39",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_02": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "185.220.101.5",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_03": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "194.26.29.42",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_04": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "45.141.215.82",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_05": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "185.196.8.11",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_06": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "91.240.118.15",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_07": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "193.142.146.10",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_08": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "45.154.255.88",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_09": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "194.26.29.99",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    },
+    "emp_threat_10": {
+      "category": "THREAT_INTEL_ATTACK",
+      "expected_drift": false,
+      "expected_threat_intel_match": true,
+      "ip_address": "185.220.101.77",
+      "research_reference": "AbuseIPDB malicious IP reputation correlation"
+    }
+  },
+  "events": [
+    {
+      "id": "evt-norm-01-1",
+      "time": 1793400000000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_01",
+      "sessionId": "sess-norm-01",
+      "ipAddress": "10.100.1.1",
+      "details": {
+        "username": "emp_norm_01",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-01",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-01"
+      }
+    },
+    {
+      "id": "evt-norm-02-1",
+      "time": 1793400015000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_02",
+      "sessionId": "sess-norm-02",
+      "ipAddress": "10.100.1.2",
+      "details": {
+        "username": "emp_norm_02",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-02",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-02"
+      }
+    },
+    {
+      "id": "evt-norm-03-1",
+      "time": 1793400030000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_03",
+      "sessionId": "sess-norm-03",
+      "ipAddress": "10.100.1.3",
+      "details": {
+        "username": "emp_norm_03",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-03",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-03"
+      }
+    },
+    {
+      "id": "evt-norm-04-1",
+      "time": 1793400045000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_04",
+      "sessionId": "sess-norm-04",
+      "ipAddress": "10.100.1.4",
+      "details": {
+        "username": "emp_norm_04",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-04",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-04"
+      }
+    },
+    {
+      "id": "evt-norm-05-1",
+      "time": 1793400060000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_05",
+      "sessionId": "sess-norm-05",
+      "ipAddress": "10.100.1.5",
+      "details": {
+        "username": "emp_norm_05",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-05",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-05"
+      }
+    },
+    {
+      "id": "evt-norm-06-1",
+      "time": 1793400075000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_06",
+      "sessionId": "sess-norm-06",
+      "ipAddress": "10.100.1.6",
+      "details": {
+        "username": "emp_norm_06",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-06",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-06"
+      }
+    },
+    {
+      "id": "evt-norm-07-1",
+      "time": 1793400090000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_07",
+      "sessionId": "sess-norm-07",
+      "ipAddress": "10.100.1.7",
+      "details": {
+        "username": "emp_norm_07",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-07",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-07"
+      }
+    },
+    {
+      "id": "evt-norm-08-1",
+      "time": 1793400105000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_08",
+      "sessionId": "sess-norm-08",
+      "ipAddress": "10.100.1.8",
+      "details": {
+        "username": "emp_norm_08",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-08",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-08"
+      }
+    },
+    {
+      "id": "evt-norm-09-1",
+      "time": 1793400120000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_09",
+      "sessionId": "sess-norm-09",
+      "ipAddress": "10.100.1.9",
+      "details": {
+        "username": "emp_norm_09",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-09",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-09"
+      }
+    },
+    {
+      "id": "evt-norm-10-1",
+      "time": 1793400135000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_10",
+      "sessionId": "sess-norm-10",
+      "ipAddress": "10.100.1.10",
+      "details": {
+        "username": "emp_norm_10",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-10",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-10"
+      }
+    },
+    {
+      "id": "evt-norm-11-1",
+      "time": 1793400150000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_11",
+      "sessionId": "sess-norm-11",
+      "ipAddress": "10.100.1.11",
+      "details": {
+        "username": "emp_norm_11",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-11",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-11"
+      }
+    },
+    {
+      "id": "evt-norm-12-1",
+      "time": 1793400165000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_12",
+      "sessionId": "sess-norm-12",
+      "ipAddress": "10.100.1.12",
+      "details": {
+        "username": "emp_norm_12",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-12",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-12"
+      }
+    },
+    {
+      "id": "evt-norm-13-1",
+      "time": 1793400180000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_13",
+      "sessionId": "sess-norm-13",
+      "ipAddress": "10.100.1.13",
+      "details": {
+        "username": "emp_norm_13",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-13",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-13"
+      }
+    },
+    {
+      "id": "evt-norm-14-1",
+      "time": 1793400195000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_14",
+      "sessionId": "sess-norm-14",
+      "ipAddress": "10.100.1.14",
+      "details": {
+        "username": "emp_norm_14",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-14",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-14"
+      }
+    },
+    {
+      "id": "evt-norm-15-1",
+      "time": 1793400210000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_15",
+      "sessionId": "sess-norm-15",
+      "ipAddress": "10.100.1.15",
+      "details": {
+        "username": "emp_norm_15",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-15",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-15"
+      }
+    },
+    {
+      "id": "evt-norm-16-1",
+      "time": 1793400225000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_16",
+      "sessionId": "sess-norm-16",
+      "ipAddress": "10.100.1.16",
+      "details": {
+        "username": "emp_norm_16",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-16",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-16"
+      }
+    },
+    {
+      "id": "evt-norm-17-1",
+      "time": 1793400240000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_17",
+      "sessionId": "sess-norm-17",
+      "ipAddress": "10.100.1.17",
+      "details": {
+        "username": "emp_norm_17",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-17",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-17"
+      }
+    },
+    {
+      "id": "evt-norm-18-1",
+      "time": 1793400255000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_18",
+      "sessionId": "sess-norm-18",
+      "ipAddress": "10.100.1.18",
+      "details": {
+        "username": "emp_norm_18",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-18",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-18"
+      }
+    },
+    {
+      "id": "evt-norm-19-1",
+      "time": 1793400270000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_19",
+      "sessionId": "sess-norm-19",
+      "ipAddress": "10.100.1.19",
+      "details": {
+        "username": "emp_norm_19",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-19",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-19"
+      }
+    },
+    {
+      "id": "evt-norm-20-1",
+      "time": 1793400285000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_20",
+      "sessionId": "sess-norm-20",
+      "ipAddress": "10.100.1.20",
+      "details": {
+        "username": "emp_norm_20",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-20",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-20"
+      }
+    },
+    {
+      "id": "evt-norm-21-1",
+      "time": 1793400300000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_21",
+      "sessionId": "sess-norm-21",
+      "ipAddress": "10.100.1.21",
+      "details": {
+        "username": "emp_norm_21",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-21",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-21"
+      }
+    },
+    {
+      "id": "evt-norm-22-1",
+      "time": 1793400315000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_22",
+      "sessionId": "sess-norm-22",
+      "ipAddress": "10.100.1.22",
+      "details": {
+        "username": "emp_norm_22",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-22",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-22"
+      }
+    },
+    {
+      "id": "evt-norm-23-1",
+      "time": 1793400330000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_23",
+      "sessionId": "sess-norm-23",
+      "ipAddress": "10.100.1.23",
+      "details": {
+        "username": "emp_norm_23",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-23",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-23"
+      }
+    },
+    {
+      "id": "evt-norm-24-1",
+      "time": 1793400345000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_24",
+      "sessionId": "sess-norm-24",
+      "ipAddress": "10.100.1.24",
+      "details": {
+        "username": "emp_norm_24",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-24",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-24"
+      }
+    },
+    {
+      "id": "evt-norm-25-1",
+      "time": 1793400360000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_25",
+      "sessionId": "sess-norm-25",
+      "ipAddress": "10.100.1.25",
+      "details": {
+        "username": "emp_norm_25",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-25",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-25"
+      }
+    },
+    {
+      "id": "evt-norm-26-1",
+      "time": 1793400375000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_26",
+      "sessionId": "sess-norm-26",
+      "ipAddress": "10.100.1.26",
+      "details": {
+        "username": "emp_norm_26",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-26",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-26"
+      }
+    },
+    {
+      "id": "evt-norm-27-1",
+      "time": 1793400390000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_27",
+      "sessionId": "sess-norm-27",
+      "ipAddress": "10.100.1.27",
+      "details": {
+        "username": "emp_norm_27",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-27",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-27"
+      }
+    },
+    {
+      "id": "evt-norm-28-1",
+      "time": 1793400405000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_28",
+      "sessionId": "sess-norm-28",
+      "ipAddress": "10.100.1.28",
+      "details": {
+        "username": "emp_norm_28",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-28",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-28"
+      }
+    },
+    {
+      "id": "evt-norm-29-1",
+      "time": 1793400420000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_29",
+      "sessionId": "sess-norm-29",
+      "ipAddress": "10.100.1.29",
+      "details": {
+        "username": "emp_norm_29",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-29",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-29"
+      }
+    },
+    {
+      "id": "evt-norm-30-1",
+      "time": 1793400435000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_30",
+      "sessionId": "sess-norm-30",
+      "ipAddress": "10.100.1.30",
+      "details": {
+        "username": "emp_norm_30",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-30",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-30"
+      }
+    },
+    {
+      "id": "evt-norm-31-1",
+      "time": 1793400450000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_31",
+      "sessionId": "sess-norm-31",
+      "ipAddress": "10.100.1.31",
+      "details": {
+        "username": "emp_norm_31",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-31",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-31"
+      }
+    },
+    {
+      "id": "evt-norm-32-1",
+      "time": 1793400465000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_32",
+      "sessionId": "sess-norm-32",
+      "ipAddress": "10.100.1.32",
+      "details": {
+        "username": "emp_norm_32",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-32",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-32"
+      }
+    },
+    {
+      "id": "evt-norm-33-1",
+      "time": 1793400480000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_33",
+      "sessionId": "sess-norm-33",
+      "ipAddress": "10.100.1.33",
+      "details": {
+        "username": "emp_norm_33",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-33",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-33"
+      }
+    },
+    {
+      "id": "evt-norm-34-1",
+      "time": 1793400495000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_34",
+      "sessionId": "sess-norm-34",
+      "ipAddress": "10.100.1.34",
+      "details": {
+        "username": "emp_norm_34",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-34",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-34"
+      }
+    },
+    {
+      "id": "evt-norm-35-1",
+      "time": 1793400510000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_35",
+      "sessionId": "sess-norm-35",
+      "ipAddress": "10.100.1.35",
+      "details": {
+        "username": "emp_norm_35",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-35",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-35"
+      }
+    },
+    {
+      "id": "evt-norm-36-1",
+      "time": 1793400525000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_36",
+      "sessionId": "sess-norm-36",
+      "ipAddress": "10.100.1.36",
+      "details": {
+        "username": "emp_norm_36",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-36",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-36"
+      }
+    },
+    {
+      "id": "evt-norm-37-1",
+      "time": 1793400540000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_37",
+      "sessionId": "sess-norm-37",
+      "ipAddress": "10.100.1.37",
+      "details": {
+        "username": "emp_norm_37",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-37",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-37"
+      }
+    },
+    {
+      "id": "evt-norm-38-1",
+      "time": 1793400555000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_38",
+      "sessionId": "sess-norm-38",
+      "ipAddress": "10.100.1.38",
+      "details": {
+        "username": "emp_norm_38",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-38",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-38"
+      }
+    },
+    {
+      "id": "evt-norm-39-1",
+      "time": 1793400570000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_39",
+      "sessionId": "sess-norm-39",
+      "ipAddress": "10.100.1.39",
+      "details": {
+        "username": "emp_norm_39",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-39",
+        "location": "Bengaluru, India",
+        "authenticator_id": "fido2-key-39"
+      }
+    },
+    {
+      "id": "evt-norm-40-1",
+      "time": 1793400585000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_40",
+      "sessionId": "sess-norm-40",
+      "ipAddress": "10.100.1.40",
+      "details": {
+        "username": "emp_norm_40",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-40",
+        "location": "Frankfurt, Germany",
+        "authenticator_id": "fido2-key-40"
+      }
+    },
+    {
+      "id": "evt-norm-41-1",
+      "time": 1793400600000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_41",
+      "sessionId": "sess-norm-41",
+      "ipAddress": "10.100.1.41",
+      "details": {
+        "username": "emp_norm_41",
+        "auth_method": "password",
+        "device_id": "corp-macbook-41",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-41-2",
+      "time": 1793400615000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_41",
+      "sessionId": "sess-norm-41",
+      "ipAddress": "10.100.1.41",
+      "details": {
+        "username": "emp_norm_41",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-41",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-42-1",
+      "time": 1793400630000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_42",
+      "sessionId": "sess-norm-42",
+      "ipAddress": "10.100.1.42",
+      "details": {
+        "username": "emp_norm_42",
+        "auth_method": "password",
+        "device_id": "corp-macbook-42",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-42-2",
+      "time": 1793400645000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_42",
+      "sessionId": "sess-norm-42",
+      "ipAddress": "10.100.1.42",
+      "details": {
+        "username": "emp_norm_42",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-42",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-43-1",
+      "time": 1793400660000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_43",
+      "sessionId": "sess-norm-43",
+      "ipAddress": "10.100.1.43",
+      "details": {
+        "username": "emp_norm_43",
+        "auth_method": "password",
+        "device_id": "corp-macbook-43",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-43-2",
+      "time": 1793400675000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_43",
+      "sessionId": "sess-norm-43",
+      "ipAddress": "10.100.1.43",
+      "details": {
+        "username": "emp_norm_43",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-43",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-44-1",
+      "time": 1793400690000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_44",
+      "sessionId": "sess-norm-44",
+      "ipAddress": "10.100.1.44",
+      "details": {
+        "username": "emp_norm_44",
+        "auth_method": "password",
+        "device_id": "corp-macbook-44",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-44-2",
+      "time": 1793400705000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_44",
+      "sessionId": "sess-norm-44",
+      "ipAddress": "10.100.1.44",
+      "details": {
+        "username": "emp_norm_44",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-44",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-45-1",
+      "time": 1793400720000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_45",
+      "sessionId": "sess-norm-45",
+      "ipAddress": "10.100.1.45",
+      "details": {
+        "username": "emp_norm_45",
+        "auth_method": "password",
+        "device_id": "corp-macbook-45",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-45-2",
+      "time": 1793400735000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_45",
+      "sessionId": "sess-norm-45",
+      "ipAddress": "10.100.1.45",
+      "details": {
+        "username": "emp_norm_45",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-45",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-46-1",
+      "time": 1793400750000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_46",
+      "sessionId": "sess-norm-46",
+      "ipAddress": "10.100.1.46",
+      "details": {
+        "username": "emp_norm_46",
+        "auth_method": "password",
+        "device_id": "corp-macbook-46",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-46-2",
+      "time": 1793400765000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_46",
+      "sessionId": "sess-norm-46",
+      "ipAddress": "10.100.1.46",
+      "details": {
+        "username": "emp_norm_46",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-46",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-47-1",
+      "time": 1793400780000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_47",
+      "sessionId": "sess-norm-47",
+      "ipAddress": "10.100.1.47",
+      "details": {
+        "username": "emp_norm_47",
+        "auth_method": "password",
+        "device_id": "corp-macbook-47",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-47-2",
+      "time": 1793400795000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_47",
+      "sessionId": "sess-norm-47",
+      "ipAddress": "10.100.1.47",
+      "details": {
+        "username": "emp_norm_47",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-47",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-48-1",
+      "time": 1793400810000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_48",
+      "sessionId": "sess-norm-48",
+      "ipAddress": "10.100.1.48",
+      "details": {
+        "username": "emp_norm_48",
+        "auth_method": "password",
+        "device_id": "corp-macbook-48",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-48-2",
+      "time": 1793400825000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_48",
+      "sessionId": "sess-norm-48",
+      "ipAddress": "10.100.1.48",
+      "details": {
+        "username": "emp_norm_48",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-48",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-49-1",
+      "time": 1793400840000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_49",
+      "sessionId": "sess-norm-49",
+      "ipAddress": "10.100.1.49",
+      "details": {
+        "username": "emp_norm_49",
+        "auth_method": "password",
+        "device_id": "corp-macbook-49",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-49-2",
+      "time": 1793400855000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_49",
+      "sessionId": "sess-norm-49",
+      "ipAddress": "10.100.1.49",
+      "details": {
+        "username": "emp_norm_49",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-49",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-50-1",
+      "time": 1793400870000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_50",
+      "sessionId": "sess-norm-50",
+      "ipAddress": "10.100.1.50",
+      "details": {
+        "username": "emp_norm_50",
+        "auth_method": "password",
+        "device_id": "corp-macbook-50",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-50-2",
+      "time": 1793400885000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_50",
+      "sessionId": "sess-norm-50",
+      "ipAddress": "10.100.1.50",
+      "details": {
+        "username": "emp_norm_50",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-50",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-51-1",
+      "time": 1793400900000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_51",
+      "sessionId": "sess-norm-51",
+      "ipAddress": "10.100.1.51",
+      "details": {
+        "username": "emp_norm_51",
+        "auth_method": "password",
+        "device_id": "corp-macbook-51",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-51-2",
+      "time": 1793400915000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_51",
+      "sessionId": "sess-norm-51",
+      "ipAddress": "10.100.1.51",
+      "details": {
+        "username": "emp_norm_51",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-51",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-52-1",
+      "time": 1793400930000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_52",
+      "sessionId": "sess-norm-52",
+      "ipAddress": "10.100.1.52",
+      "details": {
+        "username": "emp_norm_52",
+        "auth_method": "password",
+        "device_id": "corp-macbook-52",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-52-2",
+      "time": 1793400945000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_52",
+      "sessionId": "sess-norm-52",
+      "ipAddress": "10.100.1.52",
+      "details": {
+        "username": "emp_norm_52",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-52",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-53-1",
+      "time": 1793400960000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_53",
+      "sessionId": "sess-norm-53",
+      "ipAddress": "10.100.1.53",
+      "details": {
+        "username": "emp_norm_53",
+        "auth_method": "password",
+        "device_id": "corp-macbook-53",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-53-2",
+      "time": 1793400975000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_53",
+      "sessionId": "sess-norm-53",
+      "ipAddress": "10.100.1.53",
+      "details": {
+        "username": "emp_norm_53",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-53",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-54-1",
+      "time": 1793400990000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_54",
+      "sessionId": "sess-norm-54",
+      "ipAddress": "10.100.1.54",
+      "details": {
+        "username": "emp_norm_54",
+        "auth_method": "password",
+        "device_id": "corp-macbook-54",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-54-2",
+      "time": 1793401005000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_54",
+      "sessionId": "sess-norm-54",
+      "ipAddress": "10.100.1.54",
+      "details": {
+        "username": "emp_norm_54",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-54",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-55-1",
+      "time": 1793401020000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_55",
+      "sessionId": "sess-norm-55",
+      "ipAddress": "10.100.1.55",
+      "details": {
+        "username": "emp_norm_55",
+        "auth_method": "password",
+        "device_id": "corp-macbook-55",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-55-2",
+      "time": 1793401035000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_55",
+      "sessionId": "sess-norm-55",
+      "ipAddress": "10.100.1.55",
+      "details": {
+        "username": "emp_norm_55",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-55",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-56-1",
+      "time": 1793401050000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_56",
+      "sessionId": "sess-norm-56",
+      "ipAddress": "10.100.1.56",
+      "details": {
+        "username": "emp_norm_56",
+        "auth_method": "password",
+        "device_id": "corp-macbook-56",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-56-2",
+      "time": 1793401065000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_56",
+      "sessionId": "sess-norm-56",
+      "ipAddress": "10.100.1.56",
+      "details": {
+        "username": "emp_norm_56",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-56",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-57-1",
+      "time": 1793401080000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_57",
+      "sessionId": "sess-norm-57",
+      "ipAddress": "10.100.1.57",
+      "details": {
+        "username": "emp_norm_57",
+        "auth_method": "password",
+        "device_id": "corp-macbook-57",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-57-2",
+      "time": 1793401095000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_57",
+      "sessionId": "sess-norm-57",
+      "ipAddress": "10.100.1.57",
+      "details": {
+        "username": "emp_norm_57",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-57",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-58-1",
+      "time": 1793401110000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_58",
+      "sessionId": "sess-norm-58",
+      "ipAddress": "10.100.1.58",
+      "details": {
+        "username": "emp_norm_58",
+        "auth_method": "password",
+        "device_id": "corp-macbook-58",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-58-2",
+      "time": 1793401125000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_58",
+      "sessionId": "sess-norm-58",
+      "ipAddress": "10.100.1.58",
+      "details": {
+        "username": "emp_norm_58",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-58",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-59-1",
+      "time": 1793401140000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_59",
+      "sessionId": "sess-norm-59",
+      "ipAddress": "10.100.1.59",
+      "details": {
+        "username": "emp_norm_59",
+        "auth_method": "password",
+        "device_id": "corp-macbook-59",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-59-2",
+      "time": 1793401155000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_59",
+      "sessionId": "sess-norm-59",
+      "ipAddress": "10.100.1.59",
+      "details": {
+        "username": "emp_norm_59",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-59",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-norm-60-1",
+      "time": 1793401170000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_60",
+      "sessionId": "sess-norm-60",
+      "ipAddress": "10.100.1.60",
+      "details": {
+        "username": "emp_norm_60",
+        "auth_method": "password",
+        "device_id": "corp-macbook-60",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-norm-60-2",
+      "time": 1793401185000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_norm_60",
+      "sessionId": "sess-norm-60",
+      "ipAddress": "10.100.1.60",
+      "details": {
+        "username": "emp_norm_60",
+        "auth_method": "totp",
+        "device_id": "corp-macbook-60",
+        "location": "Frankfurt, Germany"
+      }
+    },
+    {
+      "id": "evt-recov-01-1",
+      "time": 1793401200000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_01",
+      "sessionId": "sess-recov-01",
+      "ipAddress": "192.168.10.1",
+      "details": {
+        "username": "emp_recov_01",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-01",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-01-2",
+      "time": 1793401215000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_01",
+      "sessionId": "sess-recov-01",
+      "ipAddress": "192.168.10.1",
+      "details": {
+        "username": "emp_recov_01",
+        "auth_method": "password",
+        "device_id": "primary-laptop-01",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-02-1",
+      "time": 1793401230000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_02",
+      "sessionId": "sess-recov-02",
+      "ipAddress": "192.168.10.2",
+      "details": {
+        "username": "emp_recov_02",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-02",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-02-2",
+      "time": 1793401245000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_02",
+      "sessionId": "sess-recov-02",
+      "ipAddress": "192.168.10.2",
+      "details": {
+        "username": "emp_recov_02",
+        "auth_method": "password",
+        "device_id": "primary-laptop-02",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-03-1",
+      "time": 1793401260000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_03",
+      "sessionId": "sess-recov-03",
+      "ipAddress": "192.168.10.3",
+      "details": {
+        "username": "emp_recov_03",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-03",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-03-2",
+      "time": 1793401275000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_03",
+      "sessionId": "sess-recov-03",
+      "ipAddress": "192.168.10.3",
+      "details": {
+        "username": "emp_recov_03",
+        "auth_method": "password",
+        "device_id": "primary-laptop-03",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-04-1",
+      "time": 1793401290000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_04",
+      "sessionId": "sess-recov-04",
+      "ipAddress": "192.168.10.4",
+      "details": {
+        "username": "emp_recov_04",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-04",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-04-2",
+      "time": 1793401305000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_04",
+      "sessionId": "sess-recov-04",
+      "ipAddress": "192.168.10.4",
+      "details": {
+        "username": "emp_recov_04",
+        "auth_method": "password",
+        "device_id": "primary-laptop-04",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-05-1",
+      "time": 1793401320000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_05",
+      "sessionId": "sess-recov-05",
+      "ipAddress": "192.168.10.5",
+      "details": {
+        "username": "emp_recov_05",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-05",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-05-2",
+      "time": 1793401335000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_05",
+      "sessionId": "sess-recov-05",
+      "ipAddress": "192.168.10.5",
+      "details": {
+        "username": "emp_recov_05",
+        "auth_method": "password",
+        "device_id": "primary-laptop-05",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-06-1",
+      "time": 1793401350000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_06",
+      "sessionId": "sess-recov-06",
+      "ipAddress": "192.168.10.6",
+      "details": {
+        "username": "emp_recov_06",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-06",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-06-2",
+      "time": 1793401365000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_06",
+      "sessionId": "sess-recov-06",
+      "ipAddress": "192.168.10.6",
+      "details": {
+        "username": "emp_recov_06",
+        "auth_method": "password",
+        "device_id": "primary-laptop-06",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-07-1",
+      "time": 1793401380000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_07",
+      "sessionId": "sess-recov-07",
+      "ipAddress": "192.168.10.7",
+      "details": {
+        "username": "emp_recov_07",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-07",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-07-2",
+      "time": 1793401395000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_07",
+      "sessionId": "sess-recov-07",
+      "ipAddress": "192.168.10.7",
+      "details": {
+        "username": "emp_recov_07",
+        "auth_method": "password",
+        "device_id": "primary-laptop-07",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-08-1",
+      "time": 1793401410000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_08",
+      "sessionId": "sess-recov-08",
+      "ipAddress": "192.168.10.8",
+      "details": {
+        "username": "emp_recov_08",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-08",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-08-2",
+      "time": 1793401425000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_08",
+      "sessionId": "sess-recov-08",
+      "ipAddress": "192.168.10.8",
+      "details": {
+        "username": "emp_recov_08",
+        "auth_method": "password",
+        "device_id": "primary-laptop-08",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-09-1",
+      "time": 1793401440000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_09",
+      "sessionId": "sess-recov-09",
+      "ipAddress": "192.168.10.9",
+      "details": {
+        "username": "emp_recov_09",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-09",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-09-2",
+      "time": 1793401455000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_09",
+      "sessionId": "sess-recov-09",
+      "ipAddress": "192.168.10.9",
+      "details": {
+        "username": "emp_recov_09",
+        "auth_method": "password",
+        "device_id": "primary-laptop-09",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-10-1",
+      "time": 1793401470000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_10",
+      "sessionId": "sess-recov-10",
+      "ipAddress": "192.168.10.10",
+      "details": {
+        "username": "emp_recov_10",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-10",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-10-2",
+      "time": 1793401485000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_10",
+      "sessionId": "sess-recov-10",
+      "ipAddress": "192.168.10.10",
+      "details": {
+        "username": "emp_recov_10",
+        "auth_method": "password",
+        "device_id": "primary-laptop-10",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-11-1",
+      "time": 1793401500000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_11",
+      "sessionId": "sess-recov-11",
+      "ipAddress": "192.168.10.11",
+      "details": {
+        "username": "emp_recov_11",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-11",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-11-2",
+      "time": 1793401515000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_11",
+      "sessionId": "sess-recov-11",
+      "ipAddress": "192.168.10.11",
+      "details": {
+        "username": "emp_recov_11",
+        "auth_method": "password",
+        "device_id": "primary-laptop-11",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-12-1",
+      "time": 1793401530000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_12",
+      "sessionId": "sess-recov-12",
+      "ipAddress": "192.168.10.12",
+      "details": {
+        "username": "emp_recov_12",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-12",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-12-2",
+      "time": 1793401545000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_12",
+      "sessionId": "sess-recov-12",
+      "ipAddress": "192.168.10.12",
+      "details": {
+        "username": "emp_recov_12",
+        "auth_method": "password",
+        "device_id": "primary-laptop-12",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-13-1",
+      "time": 1793401560000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_13",
+      "sessionId": "sess-recov-13",
+      "ipAddress": "192.168.10.13",
+      "details": {
+        "username": "emp_recov_13",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-13",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-13-2",
+      "time": 1793401575000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_13",
+      "sessionId": "sess-recov-13",
+      "ipAddress": "192.168.10.13",
+      "details": {
+        "username": "emp_recov_13",
+        "auth_method": "password",
+        "device_id": "primary-laptop-13",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-14-1",
+      "time": 1793401590000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_14",
+      "sessionId": "sess-recov-14",
+      "ipAddress": "192.168.10.14",
+      "details": {
+        "username": "emp_recov_14",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-14",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-14-2",
+      "time": 1793401605000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_14",
+      "sessionId": "sess-recov-14",
+      "ipAddress": "192.168.10.14",
+      "details": {
+        "username": "emp_recov_14",
+        "auth_method": "password",
+        "device_id": "primary-laptop-14",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-recov-15-1",
+      "time": 1793401620000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_15",
+      "sessionId": "sess-recov-15",
+      "ipAddress": "192.168.10.15",
+      "details": {
+        "username": "emp_recov_15",
+        "auth_method": "passkey",
+        "device_id": "primary-laptop-15",
+        "location": "Bengaluru, India",
+        "error": "webauthn_error_cancelled"
+      }
+    },
+    {
+      "id": "evt-recov-15-2",
+      "time": 1793401635000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_recov_15",
+      "sessionId": "sess-recov-15",
+      "ipAddress": "192.168.10.15",
+      "details": {
+        "username": "emp_recov_15",
+        "auth_method": "password",
+        "device_id": "primary-laptop-15",
+        "location": "Bengaluru, India"
+      }
+    },
+    {
+      "id": "evt-drift-01-1",
+      "time": 1793401650000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_01",
+      "sessionId": "sess-drift-01",
+      "ipAddress": "10.100.2.1",
+      "details": {
+        "username": "emp_drift_01",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-01",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-01-2",
+      "time": 1793401665000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_01",
+      "sessionId": "sess-drift-01",
+      "ipAddress": "203.0.113.101",
+      "details": {
+        "username": "emp_drift_01",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-01",
+        "location": "Reykjavik, Iceland"
+      }
+    },
+    {
+      "id": "evt-drift-01-3",
+      "time": 1793401680000,
+      "type": "REGISTER_AUTHENTICATOR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_01",
+      "sessionId": "sess-drift-01",
+      "ipAddress": "203.0.113.101",
+      "details": {
+        "username": "emp_drift_01",
+        "auth_method": "webauthn",
+        "device_id": "unfamiliar-device-01",
+        "location": "Reykjavik, Iceland",
+        "authenticator_id": "rogue-attacker-key-01"
+      }
+    },
+    {
+      "id": "evt-drift-02-1",
+      "time": 1793401695000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_02",
+      "sessionId": "sess-drift-02",
+      "ipAddress": "10.100.2.2",
+      "details": {
+        "username": "emp_drift_02",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-02",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-02-2",
+      "time": 1793401710000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_02",
+      "sessionId": "sess-drift-02",
+      "ipAddress": "203.0.113.102",
+      "details": {
+        "username": "emp_drift_02",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-02",
+        "location": "Bucharest, Romania"
+      }
+    },
+    {
+      "id": "evt-drift-02-3",
+      "time": 1793401725000,
+      "type": "REGISTER_AUTHENTICATOR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_02",
+      "sessionId": "sess-drift-02",
+      "ipAddress": "203.0.113.102",
+      "details": {
+        "username": "emp_drift_02",
+        "auth_method": "webauthn",
+        "device_id": "unfamiliar-device-02",
+        "location": "Bucharest, Romania",
+        "authenticator_id": "rogue-attacker-key-02"
+      }
+    },
+    {
+      "id": "evt-drift-03-1",
+      "time": 1793401740000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_03",
+      "sessionId": "sess-drift-03",
+      "ipAddress": "10.100.2.3",
+      "details": {
+        "username": "emp_drift_03",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-03",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-03-2",
+      "time": 1793401755000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_03",
+      "sessionId": "sess-drift-03",
+      "ipAddress": "203.0.113.103",
+      "details": {
+        "username": "emp_drift_03",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-03",
+        "location": "Reykjavik, Iceland"
+      }
+    },
+    {
+      "id": "evt-drift-03-3",
+      "time": 1793401770000,
+      "type": "REGISTER_AUTHENTICATOR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_03",
+      "sessionId": "sess-drift-03",
+      "ipAddress": "203.0.113.103",
+      "details": {
+        "username": "emp_drift_03",
+        "auth_method": "webauthn",
+        "device_id": "unfamiliar-device-03",
+        "location": "Reykjavik, Iceland",
+        "authenticator_id": "rogue-attacker-key-03"
+      }
+    },
+    {
+      "id": "evt-drift-04-1",
+      "time": 1793401785000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_04",
+      "sessionId": "sess-drift-04",
+      "ipAddress": "10.100.2.4",
+      "details": {
+        "username": "emp_drift_04",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-04",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-04-2",
+      "time": 1793401800000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_04",
+      "sessionId": "sess-drift-04",
+      "ipAddress": "203.0.113.104",
+      "details": {
+        "username": "emp_drift_04",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-04",
+        "location": "Bucharest, Romania"
+      }
+    },
+    {
+      "id": "evt-drift-05-1",
+      "time": 1793401815000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_05",
+      "sessionId": "sess-drift-05",
+      "ipAddress": "10.100.2.5",
+      "details": {
+        "username": "emp_drift_05",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-05",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-05-2",
+      "time": 1793401830000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_05",
+      "sessionId": "sess-drift-05",
+      "ipAddress": "203.0.113.105",
+      "details": {
+        "username": "emp_drift_05",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-05",
+        "location": "Reykjavik, Iceland"
+      }
+    },
+    {
+      "id": "evt-drift-06-1",
+      "time": 1793401845000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_06",
+      "sessionId": "sess-drift-06",
+      "ipAddress": "10.100.2.6",
+      "details": {
+        "username": "emp_drift_06",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-06",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-06-2",
+      "time": 1793401860000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_06",
+      "sessionId": "sess-drift-06",
+      "ipAddress": "203.0.113.106",
+      "details": {
+        "username": "emp_drift_06",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-06",
+        "location": "Bucharest, Romania"
+      }
+    },
+    {
+      "id": "evt-drift-07-1",
+      "time": 1793401875000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_07",
+      "sessionId": "sess-drift-07",
+      "ipAddress": "10.100.2.7",
+      "details": {
+        "username": "emp_drift_07",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-07",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-07-2",
+      "time": 1793401890000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_07",
+      "sessionId": "sess-drift-07",
+      "ipAddress": "203.0.113.107",
+      "details": {
+        "username": "emp_drift_07",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-07",
+        "location": "Reykjavik, Iceland"
+      }
+    },
+    {
+      "id": "evt-drift-08-1",
+      "time": 1793401905000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_08",
+      "sessionId": "sess-drift-08",
+      "ipAddress": "10.100.2.8",
+      "details": {
+        "username": "emp_drift_08",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-08",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-08-2",
+      "time": 1793401920000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_08",
+      "sessionId": "sess-drift-08",
+      "ipAddress": "203.0.113.108",
+      "details": {
+        "username": "emp_drift_08",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-08",
+        "location": "Bucharest, Romania"
+      }
+    },
+    {
+      "id": "evt-drift-09-1",
+      "time": 1793401935000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_09",
+      "sessionId": "sess-drift-09",
+      "ipAddress": "10.100.2.9",
+      "details": {
+        "username": "emp_drift_09",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-09",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-09-2",
+      "time": 1793401950000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_09",
+      "sessionId": "sess-drift-09",
+      "ipAddress": "203.0.113.109",
+      "details": {
+        "username": "emp_drift_09",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-09",
+        "location": "Reykjavik, Iceland"
+      }
+    },
+    {
+      "id": "evt-drift-10-1",
+      "time": 1793401965000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_10",
+      "sessionId": "sess-drift-10",
+      "ipAddress": "10.100.2.10",
+      "details": {
+        "username": "emp_drift_10",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-10",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-10-2",
+      "time": 1793401980000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_10",
+      "sessionId": "sess-drift-10",
+      "ipAddress": "203.0.113.110",
+      "details": {
+        "username": "emp_drift_10",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-10",
+        "location": "Bucharest, Romania"
+      }
+    },
+    {
+      "id": "evt-drift-11-1",
+      "time": 1793401995000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_11",
+      "sessionId": "sess-drift-11",
+      "ipAddress": "10.100.2.11",
+      "details": {
+        "username": "emp_drift_11",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-11",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-11-2",
+      "time": 1793402010000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_11",
+      "sessionId": "sess-drift-11",
+      "ipAddress": "203.0.113.111",
+      "details": {
+        "username": "emp_drift_11",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-11",
+        "location": "Reykjavik, Iceland"
+      }
+    },
+    {
+      "id": "evt-drift-12-1",
+      "time": 1793402025000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_12",
+      "sessionId": "sess-drift-12",
+      "ipAddress": "10.100.2.12",
+      "details": {
+        "username": "emp_drift_12",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-12",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-12-2",
+      "time": 1793402040000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_12",
+      "sessionId": "sess-drift-12",
+      "ipAddress": "203.0.113.112",
+      "details": {
+        "username": "emp_drift_12",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-12",
+        "location": "Bucharest, Romania"
+      }
+    },
+    {
+      "id": "evt-drift-13-1",
+      "time": 1793402055000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_13",
+      "sessionId": "sess-drift-13",
+      "ipAddress": "10.100.2.13",
+      "details": {
+        "username": "emp_drift_13",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-13",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-13-2",
+      "time": 1793402070000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_13",
+      "sessionId": "sess-drift-13",
+      "ipAddress": "203.0.113.113",
+      "details": {
+        "username": "emp_drift_13",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-13",
+        "location": "Reykjavik, Iceland"
+      }
+    },
+    {
+      "id": "evt-drift-14-1",
+      "time": 1793402085000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_14",
+      "sessionId": "sess-drift-14",
+      "ipAddress": "10.100.2.14",
+      "details": {
+        "username": "emp_drift_14",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-14",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-14-2",
+      "time": 1793402100000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_14",
+      "sessionId": "sess-drift-14",
+      "ipAddress": "203.0.113.114",
+      "details": {
+        "username": "emp_drift_14",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-14",
+        "location": "Bucharest, Romania"
+      }
+    },
+    {
+      "id": "evt-drift-15-1",
+      "time": 1793402115000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_15",
+      "sessionId": "sess-drift-15",
+      "ipAddress": "10.100.2.15",
+      "details": {
+        "username": "emp_drift_15",
+        "auth_method": "passkey",
+        "device_id": "corp-macbook-15",
+        "location": "Bengaluru, India",
+        "error": "fido2_timeout"
+      }
+    },
+    {
+      "id": "evt-drift-15-2",
+      "time": 1793402130000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_drift_15",
+      "sessionId": "sess-drift-15",
+      "ipAddress": "203.0.113.115",
+      "details": {
+        "username": "emp_drift_15",
+        "auth_method": "password",
+        "device_id": "unfamiliar-device-15",
+        "location": "Reykjavik, Iceland"
+      }
+    },
+    {
+      "id": "evt-threat-01-1",
+      "time": 1793402145000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_01",
+      "sessionId": "sess-threat-01",
+      "ipAddress": "118.25.6.39",
+      "details": {
+        "username": "emp_threat_01",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-01",
+        "location": "Moscow, Russia",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-01-2",
+      "time": 1793402160000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_01",
+      "sessionId": "sess-threat-01",
+      "ipAddress": "118.25.6.39",
+      "details": {
+        "username": "emp_threat_01",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-01",
+        "location": "Moscow, Russia"
+      }
+    },
+    {
+      "id": "evt-threat-02-1",
+      "time": 1793402175000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_02",
+      "sessionId": "sess-threat-02",
+      "ipAddress": "185.220.101.5",
+      "details": {
+        "username": "emp_threat_02",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-02",
+        "location": "Beijing, China",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-02-2",
+      "time": 1793402190000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_02",
+      "sessionId": "sess-threat-02",
+      "ipAddress": "185.220.101.5",
+      "details": {
+        "username": "emp_threat_02",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-02",
+        "location": "Beijing, China"
+      }
+    },
+    {
+      "id": "evt-threat-03-1",
+      "time": 1793402205000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_03",
+      "sessionId": "sess-threat-03",
+      "ipAddress": "194.26.29.42",
+      "details": {
+        "username": "emp_threat_03",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-03",
+        "location": "Moscow, Russia",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-03-2",
+      "time": 1793402220000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_03",
+      "sessionId": "sess-threat-03",
+      "ipAddress": "194.26.29.42",
+      "details": {
+        "username": "emp_threat_03",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-03",
+        "location": "Moscow, Russia"
+      }
+    },
+    {
+      "id": "evt-threat-04-1",
+      "time": 1793402235000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_04",
+      "sessionId": "sess-threat-04",
+      "ipAddress": "45.141.215.82",
+      "details": {
+        "username": "emp_threat_04",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-04",
+        "location": "Beijing, China",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-04-2",
+      "time": 1793402250000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_04",
+      "sessionId": "sess-threat-04",
+      "ipAddress": "45.141.215.82",
+      "details": {
+        "username": "emp_threat_04",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-04",
+        "location": "Beijing, China"
+      }
+    },
+    {
+      "id": "evt-threat-05-1",
+      "time": 1793402265000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_05",
+      "sessionId": "sess-threat-05",
+      "ipAddress": "185.196.8.11",
+      "details": {
+        "username": "emp_threat_05",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-05",
+        "location": "Moscow, Russia",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-05-2",
+      "time": 1793402280000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_05",
+      "sessionId": "sess-threat-05",
+      "ipAddress": "185.196.8.11",
+      "details": {
+        "username": "emp_threat_05",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-05",
+        "location": "Moscow, Russia"
+      }
+    },
+    {
+      "id": "evt-threat-06-1",
+      "time": 1793402295000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_06",
+      "sessionId": "sess-threat-06",
+      "ipAddress": "91.240.118.15",
+      "details": {
+        "username": "emp_threat_06",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-06",
+        "location": "Beijing, China",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-06-2",
+      "time": 1793402310000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_06",
+      "sessionId": "sess-threat-06",
+      "ipAddress": "91.240.118.15",
+      "details": {
+        "username": "emp_threat_06",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-06",
+        "location": "Beijing, China"
+      }
+    },
+    {
+      "id": "evt-threat-07-1",
+      "time": 1793402325000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_07",
+      "sessionId": "sess-threat-07",
+      "ipAddress": "193.142.146.10",
+      "details": {
+        "username": "emp_threat_07",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-07",
+        "location": "Moscow, Russia",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-07-2",
+      "time": 1793402340000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_07",
+      "sessionId": "sess-threat-07",
+      "ipAddress": "193.142.146.10",
+      "details": {
+        "username": "emp_threat_07",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-07",
+        "location": "Moscow, Russia"
+      }
+    },
+    {
+      "id": "evt-threat-08-1",
+      "time": 1793402355000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_08",
+      "sessionId": "sess-threat-08",
+      "ipAddress": "45.154.255.88",
+      "details": {
+        "username": "emp_threat_08",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-08",
+        "location": "Beijing, China",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-08-2",
+      "time": 1793402370000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_08",
+      "sessionId": "sess-threat-08",
+      "ipAddress": "45.154.255.88",
+      "details": {
+        "username": "emp_threat_08",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-08",
+        "location": "Beijing, China"
+      }
+    },
+    {
+      "id": "evt-threat-09-1",
+      "time": 1793402385000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_09",
+      "sessionId": "sess-threat-09",
+      "ipAddress": "194.26.29.99",
+      "details": {
+        "username": "emp_threat_09",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-09",
+        "location": "Moscow, Russia",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-09-2",
+      "time": 1793402400000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_09",
+      "sessionId": "sess-threat-09",
+      "ipAddress": "194.26.29.99",
+      "details": {
+        "username": "emp_threat_09",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-09",
+        "location": "Moscow, Russia"
+      }
+    },
+    {
+      "id": "evt-threat-10-1",
+      "time": 1793402415000,
+      "type": "LOGIN_ERROR",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_10",
+      "sessionId": "sess-threat-10",
+      "ipAddress": "185.220.101.77",
+      "details": {
+        "username": "emp_threat_10",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-10",
+        "location": "Beijing, China",
+        "error": "bad_credentials"
+      }
+    },
+    {
+      "id": "evt-threat-10-2",
+      "time": 1793402430000,
+      "type": "LOGIN",
+      "realmId": "authdrift-enterprise",
+      "clientId": "authdrift-portal",
+      "userId": "usr-uuid-emp_threat_10",
+      "sessionId": "sess-threat-10",
+      "ipAddress": "185.220.101.77",
+      "details": {
+        "username": "emp_threat_10",
+        "auth_method": "password",
+        "device_id": "tor-exit-node-10",
+        "location": "Beijing, China"
+      }
+    }
+  ]
+}

@@ -98,3 +98,77 @@ def test_api_custom_pipeline_run():
     assert data["alerts"][0]["drift_detected"] is True
     assert data["alerts"][0]["alert_type"] == "ASSURANCE_DRIFT"
     assert data["alerts"][0]["context_evidence"]["ip_address"] == "192.168.1.88"
+
+
+def test_api_health_endpoint():
+    resp = client.get("/api/health")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "HEALTHY"
+    assert data["service"] == "AuthDrift"
+    assert "uptime_seconds" in data
+    assert "threat_intelligence" in data
+    assert data["pipeline_ready"] is True
+
+
+def test_api_threat_intel_lookup_endpoint():
+    # Private IP lookup
+    resp = client.get("/api/threat-intel/lookup?ip=192.168.1.1")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "PRIVATE"
+    assert data["ip_address"] == "192.168.1.1"
+
+    # Invalid IP lookup
+    resp_invalid = client.get("/api/threat-intel/lookup?ip=not-an-ip")
+    assert resp_invalid.status_code == 200
+    data_invalid = resp_invalid.json()
+    assert data_invalid["status"] == "UNKNOWN"
+
+
+def test_api_threat_intel_scenarios_loading():
+    # Load TC10 (Victor: Threat Intelligence Malicious Public IP)
+    load_resp = client.post("/api/scenarios/tc10/load")
+    assert load_resp.status_code == 200
+    data = load_resp.json()
+    assert len(data["journeys"]) == 1
+    assert data["journeys"][0]["user_id"] == "victor"
+    assert data["alerts"][0]["context_evidence"]["ip_address"] == "118.25.6.39"
+
+
+def test_api_benchmark_case_studies_and_research_benchmark_scenarios():
+    # 1. Verified Client Recovery Case Study (Bob on same laptop-01 and same IP)
+    recov_resp = client.post("/api/scenarios/client_recovery/load")
+    assert recov_resp.status_code == 200
+    recov_data = recov_resp.json()
+    assert len(recov_data["journeys"]) == 1
+    assert recov_data["journeys"][0]["user_id"] == "bob"
+    bob_alert = recov_data["alerts"][0]
+    assert bob_alert["is_recovery_candidate"] is True
+    assert bob_alert["drift_detected"] is False
+    assert bob_alert["alert_type"] == "INFORMATIONAL"
+    assert bob_alert["risk_assessment"]["score"] == 0
+
+    # 2. Adversarial Assurance Downgrade Case Study (Carol on unfamiliar device & new IP)
+    attack_resp = client.post("/api/scenarios/adversarial_downgrade/load")
+    assert attack_resp.status_code == 200
+    attack_data = attack_resp.json()
+    assert len(attack_data["journeys"]) == 1
+    assert attack_data["journeys"][0]["user_id"] == "carol"
+    carol_alert = attack_data["alerts"][0]
+    assert carol_alert["is_recovery_candidate"] is False
+    assert carol_alert["drift_detected"] is True
+    assert carol_alert["alert_type"] == "ASSURANCE_DRIFT"
+    assert carol_alert["risk_assessment"]["score"] >= 70
+
+    # 3. Research Paper Benchmark Dataset (100 Enterprise Journeys)
+    research_resp = client.post("/api/scenarios/research_dataset/load")
+    assert research_resp.status_code == 200
+    research_data = research_resp.json()
+    assert len(research_data["journeys"]) == 100
+    assert len(research_data["alerts"]) == 100
+
+    # Reset back to all scenarios
+    client.post("/api/scenarios/all/load")
+
+

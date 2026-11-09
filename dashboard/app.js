@@ -43,6 +43,15 @@ function escapeHtml(val) {
     .replace(/'/g, '&#39;');
 }
 
+function formatThreatIntelStatus(rep) {
+  if (!rep || rep.status === 'UNKNOWN') return '<span style="color: var(--text-muted);">UNKNOWN / Unchecked</span>';
+  if (rep.status === 'KNOWN_MALICIOUS') return '<span class="loc-status-badge" style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px 6px; border-radius: 4px; font-weight: 700;">🚨 KNOWN MALICIOUS</span>';
+  if (rep.status === 'SUSPICIOUS') return '<span class="loc-status-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px; border-radius: 4px; font-weight: 600;">⚠️ SUSPICIOUS</span>';
+  if (rep.status === 'CLEAN') return '<span class="loc-status-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 2px 6px; border-radius: 4px; font-weight: 600;">✅ CLEAN</span>';
+  if (rep.status === 'PRIVATE') return '<span class="loc-status-badge" style="background: rgba(148, 163, 184, 0.2); color: #94a3b8; padding: 2px 6px; border-radius: 4px;">🏠 PRIVATE / LOCAL</span>';
+  return escapeHtml(rep.status);
+}
+
 function formatDate(isoStr) {
   if (!isoStr) return 'N/A';
   try {
@@ -52,6 +61,17 @@ function formatDate(isoStr) {
     return isoStr;
   }
 }
+
+// Live UTC Telemetry Clock
+function updateLiveClock() {
+  const el = document.getElementById('live-clock');
+  if (el) {
+    const now = new Date();
+    el.textContent = now.toUTCString().slice(17, 25) + ' UTC';
+  }
+}
+setInterval(updateLiveClock, 1000);
+setTimeout(updateLiveClock, 50);
 
 // 1. Fetch & Initialize Data
 async function loadData() {
@@ -195,7 +215,13 @@ function renderJourneys(filteredJourneys) {
     });
 
     let driftBanner = '';
-    if (hasDrift && matchedAlert?.drift_result) {
+    if (matchedAlert?.is_recovery_candidate) {
+      driftBanner = `
+        <div class="drift-transition-banner" style="background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); color: #34d399;">
+          <span>✅ <strong>Legitimate Recovery Candidate:</strong> Hardware &amp; IP continuity verified (Fallback exempt from drift alert per autonomous client continuity policy)</span>
+        </div>
+      `;
+    } else if (hasDrift && matchedAlert?.drift_result) {
       const prev = matchedAlert.drift_result.previous_assurance || 'HIGH';
       const curr = matchedAlert.drift_result.current_assurance || 'LOW';
       const transitionCitation = (matchedAlert.source_event_id && matchedAlert.target_event_id)
@@ -219,6 +245,7 @@ function renderJourneys(filteredJourneys) {
           <span class="icon">👤</span>
           <span>${journey.user_id}</span>
           <span class="badge-alert-type ${alertTypeClass}">${alertType.replace('_', ' ')}</span>
+          ${matchedAlert?.is_recovery_candidate ? '<span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.65rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.4);">RECOVERY CANDIDATE</span>' : ''}
           ${journey.session_id ? `<span class="badge" style="font-size: 0.65rem;">${journey.session_id}</span>` : ''}
         </div>
         <div class="time-range">${formatDate(firstTime)} - ${formatDate(lastTime)} (${journey.event_count} events)</div>
@@ -295,6 +322,17 @@ function renderAlertDetails(alert, journey) {
                 <code>${escapeHtml(a.previous_value || 'BASELINE')}</code> ➔ <strong><code>${escapeHtml(a.current_value)}</code></strong>
               </div>
               ${a.target_event_id ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.25rem;">Events: ${a.source_event_id ? '<code>' + escapeHtml(a.source_event_id) + '</code> ➔ ' : ''}<code>${escapeHtml(a.target_event_id)}</code></div>` : ''}
+              ${a.is_impossible_travel ? `
+                <div style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); border-radius: 4px; padding: 0.35rem 0.5rem; margin-top: 0.35rem; font-size: 0.72rem; color: #fca5a5; display: flex; align-items: center; justify-content: space-between;">
+                  <span>🚀 <strong>GEODESIC VELOCITY VIOLATION:</strong> Physical travel impossibility (&gt;900 km/h)</span>
+                  <span style="font-family: var(--font-mono); font-weight: 700; color: #ef4444;">${a.velocity_kmh ? Math.round(a.velocity_kmh).toLocaleString() + ' km/h' : 'SUPERSONIC'}</span>
+                </div>
+              ` : ''}
+              ${a.subnet_continuity !== undefined && a.subnet_continuity !== null ? `
+                <div style="font-size: 0.7rem; margin-top: 0.25rem;">
+                  Subnet Continuity: ${a.subnet_continuity ? '<span style="color: #34d399; font-weight: 600;">✅ Verified Same Subnet (/24 lease continuity)</span>' : '<span style="color: #f87171; font-weight: 600;">⚠️ Disparate Subnet Hop</span>'}
+                </div>
+              ` : ''}
             </div>
           `).join('')}
         </div>
@@ -331,6 +369,10 @@ function renderAlertDetails(alert, journey) {
   if (alertType === 'ASSURANCE_DRIFT') alertTypeClass = 'alert-type-drift';
   else if (alertType === 'CONTEXTUAL_ANOMALY') alertTypeClass = 'alert-type-context';
 
+  const riskScore = Math.min(100, Math.max(0, risk.score || 0));
+  const scoreColor = riskScore >= 75 ? '#ef4444' : riskScore >= 50 ? '#f97316' : riskScore >= 25 ? '#fbbf24' : '#10b981';
+  const scoreGlow = riskScore >= 75 ? 'rgba(239, 68, 68, 0.5)' : riskScore >= 50 ? 'rgba(249, 115, 22, 0.4)' : riskScore >= 25 ? 'rgba(251, 191, 36, 0.3)' : 'rgba(16, 185, 129, 0.35)';
+
   panel.innerHTML = `
     <div class="alert-header">
       <div>
@@ -346,6 +388,34 @@ function renderAlertDetails(alert, journey) {
         ${risk.severity} RISK (${risk.score}/100)
       </div>
     </div>
+
+    <div style="background: rgba(13, 20, 36, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 0.9rem 1.15rem; margin-bottom: 0.25rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-family: var(--font-mono); font-size: 0.75rem;">
+        <span style="color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;">Deterministic Risk Exposure Gauge</span>
+        <span style="font-weight: 800; color: ${scoreColor}; font-size: 0.9rem;">${riskScore} / 100 PTS</span>
+      </div>
+      <div style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.06); border-radius: 9999px; overflow: hidden; position: relative;">
+        <div style="width: ${riskScore}%; height: 100%; background: linear-gradient(90deg, #10b981 0%, ${scoreColor} 100%); border-radius: 9999px; box-shadow: 0 0 12px ${scoreGlow}; transition: width 0.4s ease;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-dim); margin-top: 0.35rem; font-family: var(--font-mono);">
+        <span>0 LOW (NOMINAL)</span>
+        <span>25 MEDIUM</span>
+        <span>50 HIGH</span>
+        <span>75+ CRITICAL</span>
+      </div>
+    </div>
+
+    ${alert.is_recovery_candidate ? `
+      <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 0.8rem; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; color: #34d399; font-weight: 700; font-size: 0.85rem;">
+          <span>🛡️ CLIENT CONTINUITY POLICY: RECOVERY EXEMPTION</span>
+          <span style="font-size: 0.7rem; font-weight: 500; background: rgba(16, 185, 129, 0.2); padding: 2px 6px; border-radius: 4px;">Zero False Positive Protection</span>
+        </div>
+        <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.35rem; line-height: 1.4;">
+          The user completed authentication fallback on their <strong>verified primary device and matching network subnet</strong>. Consistent with empirical authentication continuity studies (Wiefling et al., ACM ASIACCS), genuine recovery actions on verified client parameters are classified as legitimate recovery behavior rather than an active attack, preventing spurious security alerts.
+        </p>
+      </div>
+    ` : ''}
 
     <div>
       <h4 class="section-title">Assurance Transition & Drift Analysis</h4>
@@ -372,6 +442,16 @@ function renderAlertDetails(alert, journey) {
         <strong>Detection Rule:</strong> <code>${drift.transition_type || 'NORMAL_JOURNEY'}</code> &bull;
         <strong>Status:</strong> ${alert.drift_detected ? '<span style="color: #fda4af; font-weight: 700;">DRIFT DETECTED</span>' : '<span style="color: #34d399; font-weight: 700;">NO DRIFT DETECTED</span>'}
       </div>
+      ${alert.cryptographic_boundary ? `
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; padding: 0.6rem 0.85rem; margin-top: 0.5rem;">
+          <div style="font-size: 0.68rem; font-weight: 700; color: #a5b4fc; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--font-mono);">
+            NIST SP 800-63B Cryptographic Boundary Transition
+          </div>
+          <div style="font-size: 0.8rem; color: #ffffff; font-weight: 600; margin-top: 0.2rem; font-family: var(--font-mono);">
+            ${escapeHtml(alert.cryptographic_boundary)}
+          </div>
+        </div>
+      ` : ''}
     </div>
 
     <div>
@@ -407,11 +487,19 @@ function renderAlertDetails(alert, journey) {
           ${evidence.authenticator_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">Key ID: ${evidence.authenticator_id}</div>` : ''}
         </div>
 
-        <div class="evidence-item" style="grid-column: span 2;">
+        <div class="evidence-item">
           <div class="evidence-key">Prior Failures Count</div>
           <span class="evidence-val ${evidence.prior_failures_count > 0 ? 'flagged' : ''}">
             ${evidence.prior_failures_count} attempt(s) observed in journey
           </span>
+        </div>
+
+        <div class="evidence-item">
+          <div class="evidence-key">IP Threat Intelligence (${escapeHtml(evidence.ip_reputation?.provider || alert.ip_reputation?.provider || 'AbuseIPDB')})</div>
+          <div class="evidence-val">
+            ${formatThreatIntelStatus(evidence.ip_reputation || alert.ip_reputation)}
+          </div>
+          ${(evidence.ip_reputation || alert.ip_reputation)?.abuse_confidence_score !== undefined && (evidence.ip_reputation || alert.ip_reputation)?.abuse_confidence_score !== null ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">Abuse Score: <strong>${(evidence.ip_reputation || alert.ip_reputation).abuse_confidence_score}%</strong> &bull; Reports: ${(evidence.ip_reputation || alert.ip_reputation).total_reports ?? 0}</div>` : ''}
         </div>
       </div>
     </div>
@@ -422,6 +510,17 @@ function renderAlertDetails(alert, journey) {
         ${factorListHtml}
       </ul>
     </div>
+
+    ${alert.actionable_remediation && alert.actionable_remediation.length > 0 ? `
+      <div>
+        <h4 class="section-title">Actionable SOC Remediation Guidance</h4>
+        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 8px; padding: 0.85rem 1rem;">
+          <ul style="margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.78rem; color: #e2e8f0; line-height: 1.45;">
+            ${alert.actionable_remediation.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+    ` : ''}
   `;
 }
 

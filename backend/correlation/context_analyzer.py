@@ -4,11 +4,13 @@ Correlates authentication drift with per-user device baselines, location profile
 explicit authenticator registrations, sequential telemetry deltas, and failure sequences.
 """
 
+import ipaddress
 from datetime import datetime
 from typing import Dict, List, Optional, Set
 from backend.models.event import AuthenticationEvent
 from backend.models.detection import ContextAnomaly, ContextEvidence
 from backend.correlation.location_profiler import LocationProfiler, LocationStatus, UserLocationProfile
+from backend.correlation.velocity_analyzer import evaluate_travel_velocity
 
 
 REGISTRATION_EVENT_TYPES: Set[str] = {
@@ -98,26 +100,61 @@ class ContextAnalyzer:
             # Sequential location changes
             if event.location:
                 if last_loc_event is not None and event.location != last_loc_event.location:
+                    velocity_info = evaluate_travel_velocity(
+                        source_location=last_loc_event.location,
+                        target_location=event.location,
+                        source_time=last_loc_event.timestamp,
+                        target_time=event.timestamp
+                    )
+                    v_kmh = velocity_info.get("velocity_kmh") if velocity_info else None
+                    is_imp = velocity_info.get("is_impossible_travel", False) if velocity_info else False
+                    if is_imp and velocity_info:
+                        notes.append(
+                            f"Physically impossible travel velocity detected: {velocity_info['distance_km']} km traversed in "
+                            f"{velocity_info['time_delta_seconds']}s ({velocity_info['velocity_kmh']} km/h)."
+                        )
+
                     context_anomalies.append(ContextAnomaly(
                         source_event_id=last_loc_event.event_id,
                         target_event_id=event.event_id,
                         anomaly_type="LOCATION_CHANGE",
                         previous_value=last_loc_event.location,
                         current_value=event.location,
-                        lifecycle_stage=stage
+                        lifecycle_stage=stage,
+                        velocity_kmh=v_kmh,
+                        is_impossible_travel=is_imp
                     ))
                 last_loc_event = event
 
             # Sequential IP changes
             if event.ip_address:
                 if last_ip_event is not None and event.ip_address != last_ip_event.ip_address:
+                    is_same_subnet = None
+                    try:
+                        ip1 = ipaddress.ip_address(last_ip_event.ip_address)
+                        ip2 = ipaddress.ip_address(event.ip_address)
+                        if ip1.version == ip2.version == 4:
+                            net1 = ipaddress.ip_network(f"{last_ip_event.ip_address}/24", strict=False)
+                            is_same_subnet = (ip2 in net1)
+                        elif ip1.version == ip2.version == 6:
+                            net1 = ipaddress.ip_network(f"{last_ip_event.ip_address}/64", strict=False)
+                            is_same_subnet = (ip2 in net1)
+                    except Exception:
+                        is_same_subnet = None
+
+                    if is_same_subnet:
+                        notes.append(f"Sequential IP delta occurred within same /24 subnet: {last_ip_event.ip_address} ➔ {event.ip_address}.")
+                    elif is_same_subnet is False:
+                        notes.append(f"Sequential IP delta crossed distinct subnets: {last_ip_event.ip_address} ➔ {event.ip_address}.")
+
                     context_anomalies.append(ContextAnomaly(
                         source_event_id=last_ip_event.event_id,
                         target_event_id=event.event_id,
                         anomaly_type="IP_CHANGE",
                         previous_value=last_ip_event.ip_address,
                         current_value=event.ip_address,
-                        lifecycle_stage=stage
+                        lifecycle_stage=stage,
+                        subnet_continuity=is_same_subnet
                     ))
                 last_ip_event = event
 

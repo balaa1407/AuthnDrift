@@ -1,12 +1,18 @@
 """
-AuthDrift: FastAPI Web API & Dashboard Backend.
-Serves the REST API for overview metrics, reconstructed journeys, and security alerts.
-Mounts and serves the static frontend dashboard.
+AuthDrift: Managed FastAPI Web API & Background Application Service.
+Serves the REST API for overview metrics, reconstructed journeys, security alerts,
+and IP threat intelligence with structured logging, lifespan lifecycle management,
+and non-blocking asynchronous event handling.
 """
 
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 import json
+import logging
 import os
+import sys
 from typing import Any, Dict, List, Optional
+import anyio
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -14,13 +20,71 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from backend.pipeline.pipeline import AuthDriftPipeline, PipelineExecutionResult
+from backend.threat_intelligence.reputation_service import IPReputationService
 from keycloak.generate_keycloak_fixtures import generate_keycloak_fixtures, generate_okta_fixtures
+
+# Structured Logging Configuration
+LOG_LEVEL_STR = os.getenv("AUTH_DRIFT_LOG_LEVEL", "INFO").upper()
+log_level = getattr(logging, LOG_LEVEL_STR, logging.INFO)
+
+logging.basicConfig(
+    level=log_level,
+    format="%(asctime)s [%(levelname)s] [%(name)s]: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    handlers=[logging.StreamHandler(sys.stdout)],
+)
+
+logger = logging.getLogger("authdrift.api")
+
+# Application Start Time for Health Checks
+SERVICE_START_TIME = datetime.now(timezone.utc)
+
+# Global pipeline instance
+reputation_service = IPReputationService()
+pipeline = AuthDriftPipeline(reputation_service=reputation_service)
+current_result: Optional[PipelineExecutionResult] = None
+
+
+def initialize_default_data() -> None:
+    """Pre-populates the pipeline with standard Keycloak scenarios on startup."""
+    global current_result
+    try:
+        raw_events = generate_keycloak_fixtures()
+        current_result = pipeline.process_raw_events(raw_events, provider="keycloak")
+        logger.info(
+            "Default scenario fixtures loaded: %s raw events, %s journeys, %s alerts generated.",
+            len(raw_events),
+            len(current_result.journeys),
+            len(current_result.alerts),
+        )
+    except Exception as e:
+        logger.error("Failed to load initial fixtures: %s", str(e), exc_info=True)
+
+
+# Initialize default dataset on module import for immediate readiness & test client compatibility
+initialize_default_data()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    FastAPI lifespan manager handling application startup and graceful shutdown.
+    """
+    logger.info("Starting AuthDrift Security Intelligence Engine (v1.1.0)...")
+    logger.info("Threat intelligence provider: %s (enabled: %s)", reputation_service.provider.provider_name, reputation_service.enabled)
+    if current_result is None:
+        initialize_default_data()
+    yield
+    logger.info("AuthDrift application shutting down. Purging transient caches...")
+    reputation_service.clear_cache()
+    logger.info("AuthDrift application shutdown complete.")
 
 
 app = FastAPI(
     title="AuthDrift Security Intelligence Engine",
-    description="Authentication Assurance Drift Detection, Journey Reconstruction, and Security Alerts API",
-    version="1.0.0"
+    description="Authentication Assurance Drift Detection, Journey Reconstruction, and IP Threat Intelligence API",
+    version="1.1.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -31,10 +95,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global pipeline instance
-pipeline = AuthDriftPipeline()
-current_result: Optional[PipelineExecutionResult] = None
-
 
 class RunPipelineRequest(BaseModel):
     provider: str = "keycloak"
@@ -42,15 +102,27 @@ class RunPipelineRequest(BaseModel):
     deduplicate: bool = True
 
 
-def initialize_default_data() -> None:
-    """Pre-populates the pipeline with standard Keycloak scenarios on startup."""
-    global current_result
-    raw_events = generate_keycloak_fixtures()
-    current_result = pipeline.process_raw_events(raw_events, provider="keycloak")
-
-
-# Initialize on module load
-initialize_default_data()
+@app.get("/api/health")
+@app.get("/health")
+def get_health():
+    """
+    Operational healthcheck endpoint for Docker containers and monitoring probes.
+    """
+    now = datetime.now(timezone.utc)
+    uptime_seconds = (now - SERVICE_START_TIME).total_seconds()
+    return {
+        "status": "HEALTHY",
+        "service": "AuthDrift",
+        "version": "1.1.0",
+        "uptime_seconds": round(uptime_seconds, 1),
+        "threat_intelligence": {
+            "provider": reputation_service.provider.provider_name,
+            "configured": getattr(reputation_service.provider, "is_configured", False),
+            "enabled": reputation_service.enabled,
+            "cached_ips_count": reputation_service.cache_size,
+        },
+        "pipeline_ready": current_result is not None,
+    }
 
 
 @app.get("/api/overview")
@@ -62,7 +134,7 @@ def get_overview():
         "provider": current_result.provider,
         "metrics": current_result.metrics,
         "total_raw_events": current_result.total_raw_events,
-        "execution_time": current_result.execution_time.isoformat()
+        "execution_time": current_result.execution_time.isoformat(),
     }
 
 
@@ -116,20 +188,42 @@ def get_alerts(
 
 
 @app.post("/api/pipeline/run")
-def run_pipeline(request: RunPipelineRequest):
+async def run_pipeline(request: RunPipelineRequest):
     """
-    Ingests arbitrary raw events (Keycloak or Okta format) and executes the detection pipeline.
+    Ingests arbitrary raw events (Keycloak or Okta format) and executes the detection pipeline
+    in a worker thread to prevent blocking the async event loop during threat intelligence lookups.
     """
     global current_result
     try:
-        current_result = pipeline.process_raw_events(
-            raw_events=request.events,
-            provider=request.provider,
-            deduplicate=request.deduplicate
+        result = await anyio.to_thread.run_sync(
+            pipeline.process_raw_events,
+            request.events,
+            request.provider,
+            request.deduplicate,
         )
+        current_result = result
         return current_result.to_dict()
     except Exception as e:
+        logger.error("Pipeline execution error: %s", str(e), exc_info=True)
         raise HTTPException(status_code=400, detail=f"Pipeline execution failed: {str(e)}")
+
+
+@app.get("/api/threat-intel/lookup")
+async def lookup_ip_threat_intel(
+    ip: str = Query(..., description="IPv4 or IPv6 address to evaluate against threat intelligence")
+):
+    """
+    Direct threat intelligence lookup endpoint for ad-hoc IP verification.
+    """
+    try:
+        rep_result = await anyio.to_thread.run_sync(
+            reputation_service.get_ip_reputation,
+            ip
+        )
+        return rep_result.to_dict()
+    except Exception as e:
+        logger.error("Threat intelligence lookup failed for IP %s: %s", ip, str(e))
+        raise HTTPException(status_code=500, detail=f"Lookup failed: {str(e)}")
 
 
 @app.get("/api/scenarios")
@@ -137,32 +231,57 @@ def list_scenarios():
     """Lists available controlled test scenarios."""
     return {
         "scenarios": [
-            {"id": "all", "name": "All Scenarios (TC01-TC09)", "provider": "keycloak"},
+            {"id": "all", "name": "All Scenarios (TC01-TC11)", "provider": "keycloak"},
+            {"id": "client_recovery", "name": "Benchmark Case Study: Verified Client Recovery (Known Hardware & Subnet ➔ No Drift)", "provider": "keycloak"},
+            {"id": "adversarial_downgrade", "name": "Benchmark Case Study: Adversarial Assurance Downgrade (Unfamiliar Endpoint ➔ Drift Alert)", "provider": "keycloak"},
+            {"id": "research_dataset", "name": "Research Benchmark: 100 Enterprise Journeys (Lyastani, Wiefling, LANL)", "provider": "keycloak"},
             {"id": "tc01", "name": "TC01: Known Device Passkey Success (Alice)", "provider": "keycloak"},
-            {"id": "tc02", "name": "TC02: Passkey Failure -> Password Fallback (Bob)", "provider": "keycloak"},
+            {"id": "tc02", "name": "TC02: Benign Recovery on Known Device (Bob)", "provider": "keycloak"},
             {"id": "tc03", "name": "TC03: Fallback + New Device Context (Carol)", "provider": "keycloak"},
             {"id": "tc04", "name": "TC04: Repeated Failed Logins (Dave)", "provider": "keycloak"},
             {"id": "tc05", "name": "TC05: Downgrade + Rogue Authenticator Registration (Eve)", "provider": "keycloak"},
             {"id": "tc06", "name": "TC06: Legitimate Recovery / Migration (Frank)", "provider": "keycloak"},
+            {"id": "tc10", "name": "TC10: Threat Intelligence: Malicious Public IP (Victor)", "provider": "keycloak"},
+            {"id": "tc11", "name": "TC11: Threat Intelligence: Clean Public IP (Wendy)", "provider": "keycloak"},
             {"id": "okta", "name": "Vendor-Neutral Ingestion: Okta System Log (Alex)", "provider": "okta"}
         ]
     }
 
 
 @app.post("/api/scenarios/{scenario_id}/load")
-def load_scenario(scenario_id: str):
+async def load_scenario(scenario_id: str):
     """Loads a specific scenario fixture into the live pipeline."""
     global current_result
     all_events = generate_keycloak_fixtures()
 
+    research_events = None
+    if scenario_id.lower() == "research_dataset":
+        from backend.synthetic_data.research_dataset_generator import (
+            generate_research_synthetic_dataset,
+            KNOWN_BENCHMARK_DEVICES
+        )
+        data = generate_research_synthetic_dataset()
+        research_events = data["events"]
+        pipeline.known_devices.update(KNOWN_BENCHMARK_DEVICES)
+
+    bob_events = [e for e in all_events if "bob" in e.get("details", {}).get("username", "")]
+    carol_events = [e for e in all_events if "carol" in e.get("details", {}).get("username", "")]
+
     scenario_map = {
         "all": (all_events, "keycloak"),
+        "client_recovery": (bob_events, "keycloak"),
+        "sir_recovery": (bob_events, "keycloak"),  # Backward compatibility alias
+        "adversarial_downgrade": (carol_events, "keycloak"),
+        "sir_attack": (carol_events, "keycloak"),  # Backward compatibility alias
+        "research_dataset": (research_events if research_events else [], "keycloak"),
         "tc01": ([e for e in all_events if "alice" in e.get("details", {}).get("username", "")], "keycloak"),
         "tc02": ([e for e in all_events if "bob" in e.get("details", {}).get("username", "")], "keycloak"),
         "tc03": ([e for e in all_events if "carol" in e.get("details", {}).get("username", "")], "keycloak"),
         "tc04": ([e for e in all_events if "dave" in e.get("details", {}).get("username", "")], "keycloak"),
         "tc05": ([e for e in all_events if "eve" in e.get("details", {}).get("username", "")], "keycloak"),
         "tc06": ([e for e in all_events if "frank" in e.get("details", {}).get("username", "")], "keycloak"),
+        "tc10": ([e for e in all_events if "victor" in e.get("details", {}).get("username", "")], "keycloak"),
+        "tc11": ([e for e in all_events if "wendy" in e.get("details", {}).get("username", "")], "keycloak"),
         "okta": (generate_okta_fixtures(), "okta")
     }
 
@@ -172,7 +291,11 @@ def load_scenario(scenario_id: str):
 
     events, provider = target
     pipeline.deduplicator.reset()
-    current_result = pipeline.process_raw_events(events, provider=provider)
+    current_result = await anyio.to_thread.run_sync(
+        pipeline.process_raw_events,
+        events,
+        provider,
+    )
     return current_result.to_dict()
 
 
@@ -187,4 +310,3 @@ if os.path.isdir(dashboard_dir):
         if os.path.exists(index_path):
             return FileResponse(index_path)
         return {"status": "AuthDrift API online. Dashboard file not found at " + index_path}
-
