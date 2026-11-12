@@ -468,175 +468,175 @@
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_02": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_03": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_04": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_05": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_06": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_07": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_08": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_09": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_10": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_11": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_12": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_13": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_14": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_15": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_16": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_17": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_18": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_19": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_20": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_21": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_22": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_23": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_24": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_recov_25": {
       "category": "BENIGN_RECOVERY",
       "expected_drift": false,
       "expected_recovery_candidate": true,
       "expected_severity": "LOW",
-      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+      "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
     },
     "emp_drift_01": {
       "category": "ADVERSARIAL_DRIFT",

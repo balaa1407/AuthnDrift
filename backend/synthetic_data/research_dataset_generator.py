@@ -79,7 +79,7 @@ def generate_research_synthetic_dataset() -> Dict[str, Any]:
     """
     Generates a 145-journey enterprise authentication dataset grounded in empirical literature:
     - Cohort 1: 60 Routine Normal Journeys (Kent LANL 2016 baseline)
-    - Cohort 2: 25 Benign Recovery Journeys (Wiefling et al. 2020 / Sir's Scenario: same device & same IP)
+    - Cohort 2: 25 Benign Recovery Journeys (Wiefling et al. 2020 / Autonomous Client Continuity Policy: same device & same IP)
     - Cohort 3: 25 True Adversarial Drift Attacks (Lyastani et al. 2020 downgrade exploits: Cases 2, 3, 4, 5)
     - Cohort 4: 20 Contextual Anomalies without Downgrade (Freeman et al. 2016 / Alaca & van Oorschot 2016)
     - Cohort 5: 15 Threat Intelligence Matches (AbuseIPDB malicious IP feed / Thomas et al. 2019)
@@ -221,7 +221,7 @@ def generate_research_synthetic_dataset() -> Dict[str, Any]:
         }
 
     # =========================================================================
-    # COHORT 2: 25 BENIGN RECOVERY JOURNEYS (Wiefling et al. 2020 / Sir's Scenario)
+    # COHORT 2: 25 BENIGN RECOVERY JOURNEYS (Wiefling et al. 2020 / Client Continuity Policy)
     # Passkey cancelled/failed -> password fallback on SAME verified device & IP
     # =========================================================================
     for i in range(1, 26):
@@ -286,7 +286,7 @@ def generate_research_synthetic_dataset() -> Dict[str, Any]:
             "expected_drift": False,
             "expected_recovery_candidate": True,
             "expected_severity": "LOW",
-            "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule: same device & IP -> no drift alert"
+            "research_reference": "Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP): same device & IP -> no drift alert"
         }
 
     # =========================================================================

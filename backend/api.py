@@ -236,6 +236,7 @@ class RegisterBaselineRequest(BaseModel):
 
 class CalibrateJourneyRequest(BaseModel):
     user_id: Optional[str] = None
+    session_id: Optional[str] = None
     journey_index: Optional[int] = 0
 
 
@@ -286,15 +287,39 @@ def calibrate_journey(req: CalibrateJourneyRequest):
         raise HTTPException(status_code=404, detail="No journeys available for calibration.")
 
     target_journey = None
-    if req.user_id:
-        target_journey = next((j for j in current_result.journeys if j.user_id.lower() == req.user_id.lower()), None)
-    elif req.journey_index is not None and 0 <= req.journey_index < len(current_result.journeys):
-        target_journey = current_result.journeys[req.journey_index]
+    target_idx = None
+    if req.user_id and req.session_id:
+        for idx, j in enumerate(current_result.journeys):
+            if j.user_id.lower() == req.user_id.lower() and j.session_id == req.session_id:
+                target_journey = j
+                target_idx = idx
+                break
+    if not target_journey and req.user_id:
+        for idx, j in enumerate(current_result.journeys):
+            if j.user_id.lower() == req.user_id.lower():
+                target_journey = j
+                target_idx = idx
+                break
+    if not target_journey and req.journey_index is not None and 0 <= req.journey_index < len(current_result.journeys):
+        target_idx = req.journey_index
+        target_journey = current_result.journeys[target_idx]
 
     if not target_journey:
         raise HTTPException(status_code=404, detail="Requested journey not found.")
 
-    matched_alert = next((a for a in current_result.alerts if a.user_id == target_journey.user_id), None)
+    matched_alert = None
+    if target_journey.session_id:
+        matched_alert = next(
+            (a for a in current_result.alerts if a.user_id == target_journey.user_id and a.session_id == target_journey.session_id),
+            None
+        )
+    if not matched_alert and target_idx is not None and target_idx < len(current_result.alerts):
+        candidate = current_result.alerts[target_idx]
+        if candidate.user_id == target_journey.user_id:
+            matched_alert = candidate
+    if not matched_alert:
+        matched_alert = next((a for a in current_result.alerts if a.user_id == target_journey.user_id), None)
+
     if not matched_alert:
         raise HTTPException(status_code=404, detail="Matching alert not found.")
 
@@ -307,6 +332,7 @@ def calibrate_journey(req: CalibrateJourneyRequest):
 
     return {
         "user_id": target_journey.user_id,
+        "session_id": target_journey.session_id,
         "classification": calib_res.classification,
         "confidence_score": calib_res.confidence_score,
         "is_drift_alert_suppressed": calib_res.is_drift_alert_suppressed,
@@ -325,7 +351,7 @@ def list_scenarios():
             {"id": "all", "name": "All Scenarios (TC01-TC11)", "provider": "keycloak"},
             {"id": "client_recovery", "name": "Benchmark Case Study: Verified Client Recovery (Known Hardware & Subnet ➔ No Drift)", "provider": "keycloak"},
             {"id": "adversarial_downgrade", "name": "Benchmark Case Study: Adversarial Assurance Downgrade (Unfamiliar Endpoint ➔ Drift Alert)", "provider": "keycloak"},
-            {"id": "research_dataset", "name": "Research Benchmark: 100 Enterprise Journeys (Lyastani, Wiefling, LANL)", "provider": "keycloak"},
+            {"id": "research_dataset", "name": "Research Benchmark: 145 Enterprise Journeys (5 Cohorts: Lyastani, Wiefling, LANL, Freeman, Thomas)", "provider": "keycloak"},
             {"id": "tc01", "name": "TC01: Known Device Passkey Success (Alice)", "provider": "keycloak"},
             {"id": "tc02", "name": "TC02: Benign Recovery on Known Device (Bob)", "provider": "keycloak"},
             {"id": "tc03", "name": "TC03: Fallback + New Device Context (Carol)", "provider": "keycloak"},

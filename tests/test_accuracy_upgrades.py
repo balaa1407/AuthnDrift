@@ -213,3 +213,111 @@ class TestAlertRemediationAndPipelineSerialization:
         assert len(impossible_anoms) >= 1
         assert impossible_anoms[0]["velocity_kmh"] is not None
         assert impossible_anoms[0]["velocity_kmh"] > 900
+
+
+class TestPerson1Person2Integration:
+    """Verifies cross-module integration between FallbackMemory, Subnet Continuity, and Calibration API."""
+
+    def test_dhcp_same_subnet_continuity_with_fallback_memory(self):
+        from backend.llm_calibration.fallback_memory import FallbackMemoryStore
+
+        store = FallbackMemoryStore()
+        store.register_baseline(
+            user_id="dhcp_user",
+            device_id="corporate-macbook-01",
+            ip_address="192.168.10.50",
+            location="Bengaluru, India"
+        )
+        pipeline = AuthDriftPipeline(fallback_memory=store)
+        raw_events = [
+            {
+                "id": "e1",
+                "time": "2026-11-12T10:00:00Z",
+                "type": "LOGIN_ERROR",
+                "userId": "dhcp_user",
+                "sessionId": "sess-dhcp-1",
+                "ipAddress": "192.168.10.50",
+                "details": {
+                    "auth_method": "passkey",
+                    "device_id": "corporate-macbook-01",
+                    "location": "Bengaluru, India"
+                }
+            },
+            {
+                "id": "e2",
+                "time": "2026-11-12T10:00:20Z",
+                "type": "LOGIN",
+                "userId": "dhcp_user",
+                "sessionId": "sess-dhcp-1",
+                "ipAddress": "192.168.10.88",  # Same /24 DHCP lease
+                "details": {
+                    "auth_method": "password",
+                    "device_id": "corporate-macbook-01",
+                    "location": "Bengaluru, India"
+                }
+            }
+        ]
+        result = pipeline.process_raw_events(raw_events, provider="keycloak")
+        assert len(result.alerts) == 1
+        alert = result.alerts[0]
+        assert alert.context_evidence.is_primary_ip_matched is True
+        assert alert.context_evidence.is_primary_device_matched is True
+        assert alert.is_recovery_candidate is True
+        assert alert.case_category == "CASE_1_SAME_DEVICE_SAME_IP"
+        assert alert.drift_detected is False
+
+    def test_calibrate_journey_api_matches_exact_session_id(self):
+        from fastapi.testclient import TestClient
+        from backend.api import app
+
+        client = TestClient(app)
+        # Ingest two distinct sessions for the same user
+        events = [
+            {
+                "id": "s1-e1",
+                "time": "2026-11-12T10:00:00Z",
+                "type": "LOGIN",
+                "userId": "multi_user",
+                "sessionId": "sess-clean",
+                "ipAddress": "192.168.1.10",
+                "details": {"auth_method": "passkey", "device_id": "corporate-macbook-01"}
+            },
+            {
+                "id": "s2-e1",
+                "time": "2026-11-12T12:00:00Z",
+                "type": "LOGIN_ERROR",
+                "userId": "multi_user",
+                "sessionId": "sess-attack",
+                "ipAddress": "192.168.1.10",
+                "details": {"auth_method": "passkey", "device_id": "corporate-macbook-01"}
+            },
+            {
+                "id": "s2-e2",
+                "time": "2026-11-12T12:00:20Z",
+                "type": "LOGIN",
+                "userId": "multi_user",
+                "sessionId": "sess-attack",
+                "ipAddress": "203.0.113.99",
+                "details": {"auth_method": "password", "device_id": "rogue-box"}
+            }
+        ]
+        run_resp = client.post("/api/pipeline/run", json={"provider": "keycloak", "events": events})
+        assert run_resp.status_code == 200
+
+        calib_clean = client.post(
+            "/api/llm/calibrate-journey",
+            json={"user_id": "multi_user", "session_id": "sess-clean"}
+        )
+        assert calib_clean.status_code == 200
+        assert calib_clean.json()["classification"] == "ROUTINE_NORMAL"
+
+        calib_attack = client.post(
+            "/api/llm/calibrate-journey",
+            json={"user_id": "multi_user", "session_id": "sess-attack"}
+        )
+        assert calib_attack.status_code == 200
+        assert calib_attack.json()["classification"] == "ADVERSARIAL_DRIFT"
+        assert calib_attack.json()["case_category"] == "CASE_4_DIFF_DEVICE_DIFF_IP"
+
+        # Restore default scenarios
+        client.post("/api/scenarios/all/load")

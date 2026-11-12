@@ -255,13 +255,18 @@ class LLMCalibrator:
             or any(getattr(a, "is_impossible_travel", False) for a in context_evidence.context_anomalies)
         )
 
-        # Case 1: Same verified Device, Same verified IP, No contradictions -> GENUINE RECOVERY
+        # Case 1: Same verified Device, Same verified IP (or verified /24 subnet continuity), No contradictions -> GENUINE RECOVERY
+        has_hardware_or_network_change = any(
+            a.anomaly_type == "DEVICE_CHANGE"
+            or (a.anomaly_type == "IP_CHANGE" and not getattr(a, "subnet_continuity", False))
+            for a in context_evidence.context_anomalies
+        )
         if (
             dev_matched is True
             and ip_matched is True
             and not has_threat_intel_anomaly
             and not has_location_anomaly
-            and not any(a.anomaly_type in ("DEVICE_CHANGE", "IP_CHANGE") for a in context_evidence.context_anomalies)
+            and not has_hardware_or_network_change
         ):
             # Record verified recovery in memory
             if profile and dev_id and ip_addr:
@@ -282,7 +287,7 @@ class LLMCalibrator:
                     f"followed by successful fallback on the verified primary device ('{dev_id}') and verified primary "
                     f"IP ('{ip_addr}') without telemetry deviations. Client continuity satisfied (Wiefling et al. 2020)."
                 ),
-                research_citation="Wiefling et al. (ACM ASIACCS 2020) & Sir's Recovery Rule",
+                research_citation="Wiefling et al. (ACM ASIACCS 2020) & Autonomous Client Continuity Policy (ACCP)",
                 recommended_action="ALLOW_RECOVERY"
             )
 

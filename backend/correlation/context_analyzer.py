@@ -80,6 +80,7 @@ class ContextAnalyzer:
 
         known_devs = set(known_devices) if known_devices else set()
         resolved_known_ips = set(known_ips) if known_ips else set()
+        u_mem = None
 
         if fallback_memory:
             try:
@@ -94,7 +95,7 @@ class ContextAnalyzer:
                     if getattr(u_mem, "primary_ip", None) and not primary_ip:
                         primary_ip = u_mem.primary_ip
             except Exception:
-                pass
+                u_mem = None
 
         if not primary_device and len(known_devs) == 1:
             primary_device = list(known_devs)[0]
@@ -381,15 +382,21 @@ class ContextAnalyzer:
         elif is_new_device is True:
             is_primary_device_matched = False
 
+        has_disparate_ip_change = any(
+            a.anomaly_type == "IP_CHANGE" and not getattr(a, "subnet_continuity", False)
+            for a in context_anomalies
+        )
         is_primary_ip_matched = None
-        if detected_ip and primary_ip:
+        if has_disparate_ip_change:
+            is_primary_ip_matched = False
+        elif detected_ip and u_mem is not None and (primary_ip or resolved_known_ips):
+            is_primary_ip_matched = u_mem.matches_primary_ip(detected_ip)
+        elif detected_ip and primary_ip:
             is_primary_ip_matched = (detected_ip == primary_ip)
         elif detected_ip and resolved_known_ips:
             is_primary_ip_matched = (detected_ip in resolved_known_ips)
-        elif detected_ip and not any(a.anomaly_type == "IP_CHANGE" for a in context_anomalies):
+        elif detected_ip and not has_disparate_ip_change:
             is_primary_ip_matched = True if not resolved_known_ips else False
-        elif any(a.anomaly_type == "IP_CHANGE" for a in context_anomalies):
-            is_primary_ip_matched = False
 
         return ContextEvidence(
             is_new_device=is_new_device,

@@ -596,7 +596,7 @@ class TestResearchPaperSyntheticBenchmark:
 
     def test_benign_recovery_cohort_has_zero_false_positives(self):
         """
-        Tests Cohort 2 (Sir's Scenario / Wiefling et al.):
+        Tests Cohort 2 (Autonomous Client Continuity Policy / Wiefling et al.):
         User fails/forgets passkey and logs in via password on their own system and IP.
         Expected:
         - 100% of recovery journeys identified as recovery candidates.
