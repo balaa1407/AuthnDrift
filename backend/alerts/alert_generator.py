@@ -254,6 +254,8 @@ class AlertGenerator:
             priority=priority,
             alert_type=alert_type,
             is_recovery_candidate=is_recovery,
+            recovery_classification=getattr(context_evidence, "recovery_classification", None),
+            case_category=getattr(context_evidence, "case_category", None),
             source_event_id=source_event_id,
             target_event_id=target_event_id,
             context_anomalies=context_evidence.context_anomalies,

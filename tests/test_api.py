@@ -161,12 +161,12 @@ def test_api_benchmark_case_studies_and_research_benchmark_scenarios():
     assert carol_alert["alert_type"] == "ASSURANCE_DRIFT"
     assert carol_alert["risk_assessment"]["score"] >= 70
 
-    # 3. Research Paper Benchmark Dataset (100 Enterprise Journeys)
+    # 3. Research Paper Benchmark Dataset (Enhanced Enterprise Benchmark)
     research_resp = client.post("/api/scenarios/research_dataset/load")
     assert research_resp.status_code == 200
     research_data = research_resp.json()
-    assert len(research_data["journeys"]) == 100
-    assert len(research_data["alerts"]) == 100
+    assert len(research_data["journeys"]) == 145
+    assert len(research_data["alerts"]) == 145
 
     # Reset back to all scenarios
     client.post("/api/scenarios/all/load")

@@ -87,6 +87,12 @@ class ContextEvidence:
     authenticator_id: Optional[str] = None
     prior_failures_count: int = 0
     is_recovery_candidate: bool = False
+    primary_device: Optional[str] = None
+    primary_ip: Optional[str] = None
+    is_primary_device_matched: Optional[bool] = None
+    is_primary_ip_matched: Optional[bool] = None
+    recovery_classification: Optional[str] = None  # e.g., GENUINE_RECOVERY, UNCERTAIN_MISSING_CONTEXT, ANOMALY_PARAMETER_CHANGE, NONE
+    case_category: Optional[str] = None  # e.g., CASE_1_SAME_DEVICE_SAME_IP, CASE_2_DIFF_DEVICE_SAME_IP, CASE_3_SAME_DEVICE_DIFF_IP, CASE_4_DIFF_DEVICE_DIFF_IP, CASE_5_ROGUE_AUTHENTICATOR_REGISTRATION
     evidence_notes: List[str] = field(default_factory=list)
     context_anomalies: List[ContextAnomaly] = field(default_factory=list)
     ip_reputation: Optional[IPReputationResult] = None
@@ -126,6 +132,8 @@ class SecurityAlert:
     priority: str = "INFORMATIONAL"
     alert_type: str = "INFORMATIONAL"
     is_recovery_candidate: bool = False
+    recovery_classification: Optional[str] = None
+    case_category: Optional[str] = None
     source_event_id: Optional[str] = None
     target_event_id: Optional[str] = None
     context_anomalies: List[ContextAnomaly] = field(default_factory=list)

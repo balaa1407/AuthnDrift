@@ -6,7 +6,7 @@ explicit authenticator registrations, sequential telemetry deltas, and failure s
 
 import ipaddress
 from datetime import datetime
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 from backend.models.event import AuthenticationEvent
 from backend.models.detection import ContextAnomaly, ContextEvidence
 from backend.correlation.location_profiler import LocationProfiler, LocationStatus, UserLocationProfile
@@ -38,8 +38,12 @@ class ContextAnalyzer:
         known_devices: Optional[Set[str]] = None,
         known_locations: Optional[Set[str]] = None,
         known_authenticators: Optional[Set[str]] = None,
+        known_ips: Optional[Set[str]] = None,
+        primary_device: Optional[str] = None,
+        primary_ip: Optional[str] = None,
         location_profiler: Optional[LocationProfiler] = None,
-        user_profiles: Optional[Dict[str, UserLocationProfile]] = None
+        user_profiles: Optional[Dict[str, UserLocationProfile]] = None,
+        fallback_memory: Optional[Any] = None
     ) -> ContextEvidence:
         """
         Extracts and correlates contextual signals from an authentication journey.
@@ -75,6 +79,27 @@ class ContextAnalyzer:
             deduped_journey.append(event)
 
         known_devs = set(known_devices) if known_devices else set()
+        resolved_known_ips = set(known_ips) if known_ips else set()
+
+        if fallback_memory:
+            try:
+                u_mem = fallback_memory.get_profile(current_user)
+                if u_mem:
+                    if getattr(u_mem, "known_devices", None):
+                        known_devs.update(u_mem.known_devices)
+                    if getattr(u_mem, "primary_device", None) and not primary_device:
+                        primary_device = u_mem.primary_device
+                    if getattr(u_mem, "known_ips", None):
+                        resolved_known_ips.update(u_mem.known_ips)
+                    if getattr(u_mem, "primary_ip", None) and not primary_ip:
+                        primary_ip = u_mem.primary_ip
+            except Exception:
+                pass
+
+        if not primary_device and len(known_devs) == 1:
+            primary_device = list(known_devs)[0]
+        if not primary_ip and len(resolved_known_ips) == 1:
+            primary_ip = list(resolved_known_ips)[0]
 
         is_new_device: Optional[bool] = None
         detected_device: Optional[str] = None
@@ -347,6 +372,25 @@ class ContextAnalyzer:
                 )
                 break
 
+        # Client continuity evaluations (Person, Primary Device, Primary IP)
+        is_primary_device_matched = None
+        if detected_device and primary_device:
+            is_primary_device_matched = (detected_device == primary_device)
+        elif is_new_device is False:
+            is_primary_device_matched = True
+        elif is_new_device is True:
+            is_primary_device_matched = False
+
+        is_primary_ip_matched = None
+        if detected_ip and primary_ip:
+            is_primary_ip_matched = (detected_ip == primary_ip)
+        elif detected_ip and resolved_known_ips:
+            is_primary_ip_matched = (detected_ip in resolved_known_ips)
+        elif detected_ip and not any(a.anomaly_type == "IP_CHANGE" for a in context_anomalies):
+            is_primary_ip_matched = True if not resolved_known_ips else False
+        elif any(a.anomaly_type == "IP_CHANGE" for a in context_anomalies):
+            is_primary_ip_matched = False
+
         return ContextEvidence(
             is_new_device=is_new_device,
             device_id=detected_device,
@@ -358,6 +402,10 @@ class ContextAnalyzer:
             authenticator_registered=authenticator_registered,
             authenticator_id=detected_authenticator,
             prior_failures_count=prior_failures_count,
+            primary_device=primary_device,
+            primary_ip=primary_ip,
+            is_primary_device_matched=is_primary_device_matched,
+            is_primary_ip_matched=is_primary_ip_matched,
             evidence_notes=notes,
             context_anomalies=context_anomalies
         )

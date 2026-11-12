@@ -226,6 +226,97 @@ async def lookup_ip_threat_intel(
         raise HTTPException(status_code=500, detail=f"Lookup failed: {str(e)}")
 
 
+class RegisterBaselineRequest(BaseModel):
+    user_id: str
+    primary_device: Optional[str] = None
+    primary_ip: Optional[str] = None
+    known_devices: Optional[List[str]] = None
+    known_ips: Optional[List[str]] = None
+
+
+class CalibrateJourneyRequest(BaseModel):
+    user_id: Optional[str] = None
+    journey_index: Optional[int] = 0
+
+
+@app.get("/api/llm/fallback-memory")
+def get_fallback_memory():
+    """Returns registered user fallback memory profiles and verified recovery histories."""
+    profiles = {}
+    store = pipeline.engine.fallback_memory
+    for uid, prof in store._profiles.items():
+        profiles[uid] = {
+            "user_id": prof.user_id,
+            "primary_device": prof.primary_device,
+            "primary_ip": prof.primary_ip,
+            "known_devices": list(prof.known_devices),
+            "known_ips": list(prof.known_ips),
+            "verified_recovery_count": prof.verified_recovery_count,
+            "last_recovery_timestamp": prof.last_recovery_timestamp.isoformat() if prof.last_recovery_timestamp else None,
+            "recovery_history": prof.recovery_history
+        }
+    return {"profiles": profiles, "total_profiles": len(profiles)}
+
+
+@app.post("/api/llm/register-baseline")
+def register_user_baseline(req: RegisterBaselineRequest):
+    """Registers or updates a primary device and primary IP baseline in fallback memory."""
+    store = pipeline.engine.fallback_memory
+    prof = store.register_user(
+        user_id=req.user_id,
+        primary_device=req.primary_device,
+        primary_ip=req.primary_ip,
+        known_devices=set(req.known_devices) if req.known_devices else None,
+        known_ips=set(req.known_ips) if req.known_ips else None
+    )
+    return {
+        "status": "success",
+        "user_id": prof.user_id,
+        "primary_device": prof.primary_device,
+        "primary_ip": prof.primary_ip,
+        "known_devices": list(prof.known_devices),
+        "known_ips": list(prof.known_ips)
+    }
+
+
+@app.post("/api/llm/calibrate-journey")
+def calibrate_journey(req: CalibrateJourneyRequest):
+    """Runs LLM / research-grounded calibration on a current journey."""
+    if not current_result or not current_result.journeys:
+        raise HTTPException(status_code=404, detail="No journeys available for calibration.")
+
+    target_journey = None
+    if req.user_id:
+        target_journey = next((j for j in current_result.journeys if j.user_id.lower() == req.user_id.lower()), None)
+    elif req.journey_index is not None and 0 <= req.journey_index < len(current_result.journeys):
+        target_journey = current_result.journeys[req.journey_index]
+
+    if not target_journey:
+        raise HTTPException(status_code=404, detail="Requested journey not found.")
+
+    matched_alert = next((a for a in current_result.alerts if a.user_id == target_journey.user_id), None)
+    if not matched_alert:
+        raise HTTPException(status_code=404, detail="Matching alert not found.")
+
+    calib_res = pipeline.engine.calibrator.calibrate_journey(
+        journey=target_journey.events,
+        drift_result=matched_alert.drift_result,
+        context_evidence=matched_alert.context_evidence,
+        user_profile=pipeline.engine.fallback_memory.get_profile(target_journey.user_id)
+    )
+
+    return {
+        "user_id": target_journey.user_id,
+        "classification": calib_res.classification,
+        "confidence_score": calib_res.confidence_score,
+        "is_drift_alert_suppressed": calib_res.is_drift_alert_suppressed,
+        "case_category": calib_res.case_category,
+        "reasoning": calib_res.reasoning,
+        "research_citation": calib_res.research_citation,
+        "recommended_action": calib_res.recommended_action
+    }
+
+
 @app.get("/api/scenarios")
 def list_scenarios():
     """Lists available controlled test scenarios."""

@@ -547,7 +547,8 @@ class TestResearchPaperSyntheticBenchmark:
         malicious_ips = {
             "118.25.6.39", "185.220.101.5", "194.26.29.42", "45.141.215.82",
             "185.196.8.11", "91.240.118.15", "193.142.146.10", "45.154.255.88",
-            "194.26.29.99", "185.220.101.77"
+            "194.26.29.99", "185.220.101.77", "94.102.61.12", "185.220.101.99",
+            "194.26.29.111", "45.154.255.105", "91.240.118.88"
         }
 
         def mock_check(ip: str):
@@ -579,12 +580,13 @@ class TestResearchPaperSyntheticBenchmark:
     def test_research_dataset_structure_and_citations(self):
         """Verifies metadata and academic citations in synthetic benchmark dataset."""
         meta = self.dataset["metadata"]
-        assert meta["total_journeys"] == 100
+        assert meta["total_journeys"] == 145
         assert meta["total_raw_events"] > 150
         assert meta["distribution"]["ROUTINE_NORMAL"] == 60
-        assert meta["distribution"]["BENIGN_RECOVERY"] == 15
-        assert meta["distribution"]["ADVERSARIAL_DRIFT"] == 15
-        assert meta["distribution"]["THREAT_INTEL_ATTACK"] == 10
+        assert meta["distribution"]["BENIGN_RECOVERY"] == 25
+        assert meta["distribution"]["ADVERSARIAL_DRIFT"] == 25
+        assert meta["distribution"]["CONTEXTUAL_ANOMALY"] == 20
+        assert meta["distribution"]["THREAT_INTEL_ATTACK"] == 15
 
         citations = [p["citation"] for p in meta["research_papers"]]
         assert any("Lyastani" in c for c in citations)
@@ -605,8 +607,8 @@ class TestResearchPaperSyntheticBenchmark:
             if "recov" in e["userId"]
         ]
         result = self.pipeline.process_raw_events(recovery_events, provider="keycloak")
-        assert len(result.journeys) == 15
-        assert len(result.alerts) == 15
+        assert len(result.journeys) == 25
+        assert len(result.alerts) == 25
 
         for alert in result.alerts:
             # 1. Recovery candidate classified
@@ -633,14 +635,23 @@ class TestResearchPaperSyntheticBenchmark:
             if "drift" in e["userId"]
         ]
         result = self.pipeline.process_raw_events(drift_events, provider="keycloak")
-        assert len(result.journeys) == 15
-        assert len(result.alerts) == 15
+        assert len(result.journeys) == 25
+        assert len(result.alerts) == 25
 
         for alert in result.alerts:
             assert alert.drift_detected is True
             assert alert.alert_type == "ASSURANCE_DRIFT"
             assert alert.is_recovery_candidate is False
-            assert alert.context_evidence.is_new_device is True
+            assert (
+                alert.context_evidence.is_new_device
+                or alert.context_evidence.is_primary_ip_matched is False
+                or alert.case_category in [
+                    "CASE_2_DIFF_DEVICE_SAME_IP",
+                    "CASE_3_SAME_DEVICE_DIFF_IP",
+                    "CASE_4_DIFF_DEVICE_DIFF_IP",
+                    "CASE_5_ROGUE_AUTHENTICATOR_REGISTRATION"
+                ]
+            ) is True
             assert alert.risk_assessment.score >= 70
             assert alert.risk_assessment.severity in [RiskSeverity.HIGH, RiskSeverity.CRITICAL]
 
@@ -657,7 +668,7 @@ class TestResearchPaperSyntheticBenchmark:
             if "threat" in e["userId"]
         ]
         result = self.pipeline.process_raw_events(threat_events, provider="keycloak")
-        assert len(result.journeys) == 10
+        assert len(result.journeys) == 15
 
         for alert in result.alerts:
             assert alert.ip_reputation is not None
@@ -666,12 +677,12 @@ class TestResearchPaperSyntheticBenchmark:
 
     def test_end_to_end_benchmark_full_dataset(self):
         """
-        Processes entire 100-journey dataset through the pipeline and verifies summary metrics.
+        Processes entire 145-journey dataset through the pipeline and verifies summary metrics.
         """
         result = self.pipeline.process_raw_events(self.dataset["events"], provider="keycloak")
         assert result.total_raw_events == len(self.dataset["events"])
-        assert len(result.journeys) == 100
-        assert len(result.alerts) == 100
+        assert len(result.journeys) == 145
+        assert len(result.alerts) == 145
 
         # Benchmark verification calculations
         alert_map = {a.user_id: a for a in result.alerts}

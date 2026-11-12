@@ -23,6 +23,7 @@ from backend.journey.reconstructor import JourneyReconstructor
 from backend.correlation.location_profiler import LocationProfiler
 from backend.assurance.assurance_assignment import assign_event_assurance
 from backend.threat_intelligence.reputation_service import IPReputationService
+from backend.llm_calibration.fallback_memory import FallbackMemoryStore
 
 
 @dataclass
@@ -133,6 +134,8 @@ class PipelineExecutionResult:
                     "drift_detected": a.drift_detected,
                     "alert_type": getattr(a, "alert_type", "INFORMATIONAL"),
                     "is_recovery_candidate": getattr(a, "is_recovery_candidate", False),
+                    "recovery_classification": getattr(a, "recovery_classification", None),
+                    "case_category": getattr(a, "case_category", None),
                     "priority": getattr(a, "priority", "INFORMATIONAL"),
                     "is_actionable": a.is_actionable,
                     "source_event_id": getattr(a, "source_event_id", None),
@@ -180,6 +183,12 @@ class PipelineExecutionResult:
                         "authenticator_registered": a.context_evidence.authenticator_registered,
                         "authenticator_id": a.context_evidence.authenticator_id,
                         "is_recovery_candidate": getattr(a.context_evidence, "is_recovery_candidate", False),
+                        "primary_device": getattr(a.context_evidence, "primary_device", None),
+                        "primary_ip": getattr(a.context_evidence, "primary_ip", None),
+                        "is_primary_device_matched": getattr(a.context_evidence, "is_primary_device_matched", None),
+                        "is_primary_ip_matched": getattr(a.context_evidence, "is_primary_ip_matched", None),
+                        "recovery_classification": getattr(a.context_evidence, "recovery_classification", None),
+                        "case_category": getattr(a.context_evidence, "case_category", None),
                         "prior_failures_count": a.context_evidence.prior_failures_count,
                         "evidence_notes": a.context_evidence.evidence_notes,
                         "context_anomalies": [
@@ -222,10 +231,14 @@ class AuthDriftPipeline:
         reconstructor: Optional[JourneyReconstructor] = None,
         deduplicator: Optional[EventDeduplicator] = None,
         location_profiler: Optional[LocationProfiler] = None,
-        reputation_service: Optional[IPReputationService] = None
+        reputation_service: Optional[IPReputationService] = None,
+        fallback_memory: Optional[FallbackMemoryStore] = None
     ):
         self.reputation_service = reputation_service or IPReputationService()
-        self.engine = engine or AuthDriftEngine(reputation_service=self.reputation_service)
+        self.engine = engine or AuthDriftEngine(
+            reputation_service=self.reputation_service,
+            fallback_memory=fallback_memory
+        )
         self.reconstructor = reconstructor or JourneyReconstructor()
         self.deduplicator = deduplicator or EventDeduplicator()
         self.location_profiler = location_profiler or LocationProfiler(min_successful_observations=2)
