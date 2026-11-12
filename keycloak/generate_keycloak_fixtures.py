@@ -130,7 +130,8 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
                 "username": "dave",
                 "auth_method": "password",
                 "error": "invalid_user_credentials",
-                "device_id": "unknown-box"
+                "device_id": "unknown-box",
+                "location": "Moscow, RU"
             }
         },
         {
@@ -146,7 +147,8 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
                 "username": "dave",
                 "auth_method": "password",
                 "error": "invalid_user_credentials",
-                "device_id": "unknown-box"
+                "device_id": "unknown-box",
+                "location": "Moscow, RU"
             }
         },
         {
@@ -162,7 +164,8 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
                 "username": "dave",
                 "auth_method": "password",
                 "error": "invalid_user_credentials",
-                "device_id": "unknown-box"
+                "device_id": "unknown-box",
+                "location": "Moscow, RU"
             }
         },
 
@@ -179,7 +182,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "details": {
                 "username": "eve",
                 "auth_method": "passkey",
-                "error": "device_not_registered"
+                "error": "device_not_registered",
+                "device_id": "unfamiliar-laptop-05",
+                "location": "Bucharest, RO"
             }
         },
         {
@@ -193,7 +198,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "ipAddress": "192.168.1.30",
             "details": {
                 "username": "eve",
-                "auth_method": "password"
+                "auth_method": "password",
+                "device_id": "unfamiliar-laptop-05",
+                "location": "Bucharest, RO"
             }
         },
         {
@@ -208,7 +215,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "details": {
                 "username": "eve",
                 "auth_method": "webauthn",
-                "authenticator_id": "rogue-token-007"
+                "authenticator_id": "rogue-token-007",
+                "device_id": "unfamiliar-laptop-05",
+                "location": "Bucharest, RO"
             }
         },
 
@@ -225,7 +234,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "details": {
                 "username": "frank",
                 "auth_method": "passkey",
-                "error": "token_expired"
+                "error": "token_expired",
+                "device_id": "frank-new-laptop-02",
+                "location": "Bangalore, IN"
             }
         },
         {
@@ -239,7 +250,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "ipAddress": "192.168.1.40",
             "details": {
                 "username": "frank",
-                "auth_method": "password"
+                "auth_method": "password",
+                "device_id": "frank-new-laptop-02",
+                "location": "Bangalore, IN"
             }
         },
 
@@ -255,7 +268,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "ipAddress": "192.168.1.50",
             "details": {
                 "username": "grace",
-                "auth_method": "futuristic_quantum_handshake"
+                "auth_method": "futuristic_quantum_handshake",
+                "device_id": "corporate-macbook-01",
+                "location": "Bangalore, IN"
             }
         },
         {
@@ -269,7 +284,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "ipAddress": "192.168.1.50",
             "details": {
                 "username": "grace",
-                "auth_method": "password"
+                "auth_method": "password",
+                "device_id": "corporate-macbook-01",
+                "location": "Bangalore, IN"
             }
         },
 
@@ -314,7 +331,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "ipAddress": "192.168.1.60",
             "details": {
                 "username": "ivan",
-                "auth_method": "totp"
+                "auth_method": "totp",
+                "device_id": "pixel-9-pro",
+                "location": "London, UK"
             }
         },
         {
@@ -328,7 +347,9 @@ def generate_keycloak_fixtures() -> List[Dict[str, Any]]:
             "ipAddress": "192.168.1.60",
             "details": {
                 "username": "ivan",
-                "auth_method": "totp"
+                "auth_method": "totp",
+                "device_id": "pixel-9-pro",
+                "location": "London, UK"
             }
         },
 
