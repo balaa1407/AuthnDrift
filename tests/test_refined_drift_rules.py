@@ -16,7 +16,6 @@ from backend.pipeline.pipeline import AuthDriftPipeline
 from backend.models.detection import RiskSeverity
 from backend.models.event import AuthenticationEvent
 from backend.correlation.context_analyzer import ContextAnalyzer
-from backend.llm_calibration.fallback_memory import FallbackMemoryStore
 
 
 class TestRefinedDriftClassificationRules:
@@ -24,21 +23,15 @@ class TestRefinedDriftClassificationRules:
 
     @pytest.fixture(autouse=True)
     def setup_pipeline(self):
-        self.memory_store = FallbackMemoryStore()
-        # Register a known user with known primary device and primary IP
+        # Register a known user with known primary device and primary IP baseline
         self.user_id = "alice_analyst"
         self.primary_dev = "dev-macbook-alice"
         self.primary_ip = "192.168.1.100"
         self.primary_loc = "Bengaluru, India"
-        self.memory_store.register_baseline(
-            user_id=self.user_id,
-            device_id=self.primary_dev,
-            ip_address=self.primary_ip,
-            location=self.primary_loc
-        )
 
-        self.pipeline = AuthDriftPipeline(fallback_memory=self.memory_store)
+        self.pipeline = AuthDriftPipeline()
         self.pipeline.known_devices.add(self.primary_dev)
+        self.pipeline.known_ips = {self.primary_ip}
 
     def test_case_1_same_device_same_ip_genuine_recovery(self):
         """

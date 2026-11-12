@@ -215,20 +215,12 @@ class TestAlertRemediationAndPipelineSerialization:
         assert impossible_anoms[0]["velocity_kmh"] > 900
 
 
-class TestPerson1Person2Integration:
-    """Verifies cross-module integration between FallbackMemory, Subnet Continuity, and Calibration API."""
+class TestSubnetContinuityAndSessionIsolation:
+    """Verifies cross-module integration for DHCP Subnet Continuity and multi-session isolation."""
 
-    def test_dhcp_same_subnet_continuity_with_fallback_memory(self):
-        from backend.llm_calibration.fallback_memory import FallbackMemoryStore
-
-        store = FallbackMemoryStore()
-        store.register_baseline(
-            user_id="dhcp_user",
-            device_id="corporate-macbook-01",
-            ip_address="192.168.10.50",
-            location="Bengaluru, India"
-        )
-        pipeline = AuthDriftPipeline(fallback_memory=store)
+    def test_dhcp_same_subnet_continuity_with_known_ips(self):
+        pipeline = AuthDriftPipeline()
+        pipeline.known_ips = {"192.168.10.50"}
         raw_events = [
             {
                 "id": "e1",
@@ -266,7 +258,7 @@ class TestPerson1Person2Integration:
         assert alert.case_category == "CASE_1_SAME_DEVICE_SAME_IP"
         assert alert.drift_detected is False
 
-    def test_calibrate_journey_api_matches_exact_session_id(self):
+    def test_multi_session_alerts_preserve_exact_session_isolation(self):
         from fastapi.testclient import TestClient
         from backend.api import app
 
@@ -304,20 +296,14 @@ class TestPerson1Person2Integration:
         run_resp = client.post("/api/pipeline/run", json={"provider": "keycloak", "events": events})
         assert run_resp.status_code == 200
 
-        calib_clean = client.post(
-            "/api/llm/calibrate-journey",
-            json={"user_id": "multi_user", "session_id": "sess-clean"}
-        )
-        assert calib_clean.status_code == 200
-        assert calib_clean.json()["classification"] == "ROUTINE_NORMAL"
+        alerts_resp = client.get("/api/alerts?user_id=multi_user")
+        assert alerts_resp.status_code == 200
+        alerts_by_session = {a["session_id"]: a for a in alerts_resp.json()["alerts"]}
 
-        calib_attack = client.post(
-            "/api/llm/calibrate-journey",
-            json={"user_id": "multi_user", "session_id": "sess-attack"}
-        )
-        assert calib_attack.status_code == 200
-        assert calib_attack.json()["classification"] == "ADVERSARIAL_DRIFT"
-        assert calib_attack.json()["case_category"] == "CASE_4_DIFF_DEVICE_DIFF_IP"
+        assert alerts_by_session["sess-clean"]["case_category"] == "ROUTINE"
+        assert alerts_by_session["sess-clean"]["drift_detected"] is False
+        assert alerts_by_session["sess-attack"]["case_category"] == "CASE_4_DIFF_DEVICE_DIFF_IP"
+        assert alerts_by_session["sess-attack"]["drift_detected"] is True
 
         # Restore default scenarios
         client.post("/api/scenarios/all/load")

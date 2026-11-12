@@ -23,7 +23,6 @@ from backend.journey.reconstructor import JourneyReconstructor
 from backend.correlation.location_profiler import LocationProfiler
 from backend.assurance.assurance_assignment import assign_event_assurance
 from backend.threat_intelligence.reputation_service import IPReputationService
-from backend.llm_calibration.fallback_memory import FallbackMemoryStore
 
 
 @dataclass
@@ -232,12 +231,10 @@ class AuthDriftPipeline:
         deduplicator: Optional[EventDeduplicator] = None,
         location_profiler: Optional[LocationProfiler] = None,
         reputation_service: Optional[IPReputationService] = None,
-        fallback_memory: Optional[FallbackMemoryStore] = None
     ):
         self.reputation_service = reputation_service or IPReputationService()
         self.engine = engine or AuthDriftEngine(
             reputation_service=self.reputation_service,
-            fallback_memory=fallback_memory
         )
         self.reconstructor = reconstructor or JourneyReconstructor()
         self.deduplicator = deduplicator or EventDeduplicator()
@@ -252,6 +249,7 @@ class AuthDriftPipeline:
         self.known_devices: Set[str] = {"corporate-macbook-01", "pixel-9-pro", "laptop-01"}
         self.known_locations: Optional[Set[str]] = None
         self.known_authenticators: Set[str] = {"corporate-yubikey-01", "key-01"}
+        self.known_ips: Optional[Set[str]] = None
 
     def register_normalizer(self, provider_name: str, normalizer: BaseEventNormalizer) -> None:
         """Allows registering custom or third-party identity provider normalizers."""
@@ -317,6 +315,7 @@ class AuthDriftPipeline:
                 known_devices=self.known_devices,
                 known_locations=self.known_locations,
                 known_authenticators=self.known_authenticators,
+                known_ips=self.known_ips,
                 location_profiler=journey_profiler,
                 session_id=journey.session_id,
                 reputation_service=self.reputation_service

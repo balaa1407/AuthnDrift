@@ -4,9 +4,9 @@ Coordinates Assurance Assignment, Drift Detection, Contextual Correlation,
 IP Threat Intelligence, Risk Scoring, and Explainable Alert Generation.
 """
 
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 from backend.models.event import AuthenticationEvent
-from backend.models.detection import SecurityAlert
+from backend.models.detection import ContextEvidence, DriftResult, SecurityAlert
 from backend.assurance.assurance_model import AssuranceModel
 from backend.detection.drift_detector import DriftDetector
 from backend.correlation.context_analyzer import ContextAnalyzer
@@ -14,8 +14,6 @@ from backend.correlation.location_profiler import LocationProfiler, UserLocation
 from backend.risk.risk_engine import RiskEngine
 from backend.alerts.alert_generator import AlertGenerator
 from backend.threat_intelligence.reputation_service import IPReputationService
-from backend.llm_calibration.fallback_memory import FallbackMemoryStore
-from backend.llm_calibration.calibrator import LLMCalibrator
 from backend.detection.detection_rules import (
     RULE_FAILED_STRONG_SUCCESS_WEAK,
     RULE_MULTI_FAILURE_FALLBACK
@@ -24,7 +22,7 @@ from backend.detection.detection_rules import (
 
 class AuthDriftEngine:
     """
-    Unified entry point for the security intelligence layer.
+    Unified entry point for the deterministic security intelligence layer.
     """
 
     def __init__(
@@ -35,8 +33,6 @@ class AuthDriftEngine:
         risk_engine: Optional[RiskEngine] = None,
         alert_generator: Optional[AlertGenerator] = None,
         reputation_service: Optional[IPReputationService] = None,
-        fallback_memory: Optional[FallbackMemoryStore] = None,
-        calibrator: Optional[LLMCalibrator] = None
     ):
         self.assurance_model = assurance_model or AssuranceModel()
         self.drift_detector = drift_detector or DriftDetector(assurance_model=self.assurance_model)
@@ -44,8 +40,77 @@ class AuthDriftEngine:
         self.risk_engine = risk_engine or RiskEngine()
         self.alert_generator = alert_generator or AlertGenerator()
         self.reputation_service = reputation_service
-        self.fallback_memory = fallback_memory or FallbackMemoryStore()
-        self.calibrator = calibrator or LLMCalibrator(memory_store=self.fallback_memory)
+
+    @staticmethod
+    def _classify_journey_outcome(
+        drift_result: DriftResult,
+        context_evidence: ContextEvidence,
+    ) -> Tuple[str, str, bool]:
+        """
+        Deterministically classifies journey case category (CASE_1..CASE_5 / ROUTINE)
+        and ACCP recovery eligibility strictly from empirical journey telemetry.
+        Missing device and IP context fails closed.
+        """
+        if context_evidence.authenticator_registered is True:
+            return ("CASE_5_ROGUE_AUTHENTICATOR_REGISTRATION", "ADVERSARIAL_DRIFT", False)
+
+        has_device = context_evidence.device_id is not None
+        has_ip = context_evidence.ip_address is not None
+
+        if not drift_result.drift_detected and context_evidence.prior_failures_count == 0:
+            if context_evidence.context_anomalies:
+                case_cat = "CASE_3_SAME_DEVICE_DIFF_IP" if has_device else "ANOMALY"
+                return (case_cat, "CONTEXTUAL_ANOMALY", False)
+            return ("ROUTINE", "ROUTINE_NORMAL", False)
+
+        if not has_device and not has_ip:
+            return ("UNCERTAIN_MISSING_CONTEXT", "UNCERTAIN_MISSING_CONTEXT", False)
+
+        dev_matched = context_evidence.is_primary_device_matched
+        ip_matched = context_evidence.is_primary_ip_matched
+
+        has_threat_intel_anomaly = (
+            getattr(context_evidence, "ip_reputation", None) is not None
+            and context_evidence.ip_reputation.status in ("KNOWN_MALICIOUS", "SUSPICIOUS")
+        )
+        has_location_anomaly = (
+            context_evidence.is_location_changed is True
+            or any(getattr(a, "is_impossible_travel", False) for a in context_evidence.context_anomalies)
+        )
+        has_ip_anomaly = any(
+            a.anomaly_type == "IP_CHANGE" and not getattr(a, "subnet_continuity", False)
+            for a in context_evidence.context_anomalies
+        )
+        has_hardware_or_network_change = any(
+            a.anomaly_type == "DEVICE_CHANGE"
+            or (a.anomaly_type == "IP_CHANGE" and not getattr(a, "subnet_continuity", False))
+            for a in context_evidence.context_anomalies
+        )
+
+        # Case 1: Same verified device & matching IP/subnet, no contradictions -> ACCP recovery
+        if (
+            drift_result.drift_detected
+            and drift_result.transition_type in (RULE_FAILED_STRONG_SUCCESS_WEAK, RULE_MULTI_FAILURE_FALLBACK)
+            and dev_matched is True
+            and ip_matched is True
+            and has_device
+            and has_ip
+            and not has_threat_intel_anomaly
+            and not has_location_anomaly
+            and not has_hardware_or_network_change
+        ):
+            return ("CASE_1_SAME_DEVICE_SAME_IP", "GENUINE_RECOVERY", True)
+
+        if dev_matched is False and ip_matched is True:
+            return ("CASE_2_DIFF_DEVICE_SAME_IP", "ADVERSARIAL_DRIFT", False)
+
+        if dev_matched is True and (ip_matched is False or has_ip_anomaly):
+            return ("CASE_3_SAME_DEVICE_DIFF_IP", "CONTEXTUAL_ANOMALY", False)
+
+        if dev_matched is False and (ip_matched is False or has_ip_anomaly):
+            return ("CASE_4_DIFF_DEVICE_DIFF_IP", "ADVERSARIAL_DRIFT", False)
+
+        return ("UNCERTAIN_MISSING_CONTEXT", "ADVERSARIAL_DRIFT", False)
 
     def evaluate_journey(
         self,
@@ -60,19 +125,17 @@ class AuthDriftEngine:
         user_profiles: Optional[Dict[str, UserLocationProfile]] = None,
         session_id: Optional[str] = None,
         reputation_service: Optional[IPReputationService] = None,
-        fallback_memory: Optional[FallbackMemoryStore] = None
     ) -> SecurityAlert:
         """
-        Executes end-to-end security evaluation for an authentication journey:
+        Executes end-to-end deterministic security evaluation for an authentication journey:
         1. Drift Detection (Assurance comparison)
-        2. Contextual Correlation (Per-user location profile & device baselines)
+        2. Contextual Correlation (Per-user location profile & device/IP baselines)
         3. Threat Intelligence Correlation (IP Reputation lookup)
-        4. Verified Recovery & LLM Calibration (Client continuity: Person, Primary Device, Primary IP)
+        4. Verified Recovery & Case Classification (Client continuity: Device, IP/Subnet)
         5. Risk Assessment
         6. Explainable Alert Generation
         """
         drift_result = self.drift_detector.detect_drift(journey)
-        active_memory = fallback_memory or self.fallback_memory
 
         context_evidence = self.context_analyzer.analyze_journey_context(
             journey=journey,
@@ -84,7 +147,6 @@ class AuthDriftEngine:
             primary_ip=primary_ip,
             location_profiler=location_profiler,
             user_profiles=user_profiles,
-            fallback_memory=active_memory
         )
 
         # 3. IP Threat Intelligence Correlation
@@ -95,44 +157,17 @@ class AuthDriftEngine:
             except Exception:
                 context_evidence.ip_reputation = None
 
-        # 4. Verified Recovery Classification & Calibration (Client Continuity: Person, Primary Device, Primary IP)
-        user_id = journey[0].user_id if journey else "unknown_user"
-        u_profile = active_memory.get_profile(user_id) if active_memory else None
-
-        calib_res = self.calibrator.calibrate_journey(
-            journey=journey,
+        # 4. Deterministic Case Classification & ACCP Recovery Evaluation
+        case_category, recovery_classification, is_recovery_candidate = self._classify_journey_outcome(
             drift_result=drift_result,
             context_evidence=context_evidence,
-            user_profile=u_profile
         )
-
-        context_evidence.recovery_classification = calib_res.classification
-        context_evidence.case_category = calib_res.case_category
-
-        if (
-            calib_res.classification == "GENUINE_RECOVERY"
-            and calib_res.is_drift_alert_suppressed
-            and drift_result.drift_detected
-            and drift_result.transition_type in (RULE_FAILED_STRONG_SUCCESS_WEAK, RULE_MULTI_FAILURE_FALLBACK)
-        ):
+        context_evidence.case_category = case_category
+        context_evidence.recovery_classification = recovery_classification
+        if is_recovery_candidate:
             context_evidence.is_recovery_candidate = True
-            context_evidence.evidence_notes.append(calib_res.reasoning)
-        elif (
-            drift_result.drift_detected
-            and drift_result.transition_type in (RULE_FAILED_STRONG_SUCCESS_WEAK, RULE_MULTI_FAILURE_FALLBACK)
-            and context_evidence.is_new_device is False
-            and context_evidence.device_id is not None
-            and context_evidence.ip_address is not None
-            and not any(a.anomaly_type in ("DEVICE_CHANGE", "IP_CHANGE", "LOCATION_CHANGE") for a in context_evidence.context_anomalies)
-            and context_evidence.is_location_changed is not True
-            and context_evidence.authenticator_registered is not True
-            and getattr(context_evidence.ip_reputation, "status", None) != "KNOWN_MALICIOUS"
-        ):
-            context_evidence.is_recovery_candidate = True
-            context_evidence.case_category = "CASE_1_SAME_DEVICE_SAME_IP"
-            context_evidence.recovery_classification = "GENUINE_RECOVERY"
             context_evidence.evidence_notes.append(
-                "Legitimate authentication recovery candidate on verified known device and matching IP address."
+                "Legitimate authentication recovery candidate on verified known device and matching IP/subnet (ACCP)."
             )
 
         risk_assessment = self.risk_engine.evaluate_risk(drift_result, context_evidence)

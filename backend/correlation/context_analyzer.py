@@ -24,6 +24,32 @@ REGISTRATION_EVENT_TYPES: Set[str] = {
 }
 
 
+def _is_same_subnet(ip_a: str, ip_b: str) -> Optional[bool]:
+    """
+    Returns True if ip_a and ip_b belong to the same /24 (IPv4) or /64 (IPv6) subnet,
+    False if disparate subnets, or None if either address is invalid.
+    """
+    try:
+        addr_a = ipaddress.ip_address(ip_a)
+        addr_b = ipaddress.ip_address(ip_b)
+        if addr_a.version != addr_b.version:
+            return False
+        prefix = 24 if addr_a.version == 4 else 64
+        net_a = ipaddress.ip_network(f"{ip_a}/{prefix}", strict=False)
+        return addr_b in net_a
+    except ValueError:
+        return None
+
+
+def _ip_matches_baseline(ip_addr: str, baseline_ips: Set[str]) -> bool:
+    """
+    Evaluates whether ip_addr matches any baseline IP directly or within the same /24 (IPv4) / /64 (IPv6) subnet.
+    """
+    if ip_addr in baseline_ips:
+        return True
+    return any(_is_same_subnet(cand, ip_addr) is True for cand in baseline_ips)
+
+
 class ContextAnalyzer:
     """
     Analyzes contextual signals and telemetry deltas across the full event sequence.
@@ -43,7 +69,6 @@ class ContextAnalyzer:
         primary_ip: Optional[str] = None,
         location_profiler: Optional[LocationProfiler] = None,
         user_profiles: Optional[Dict[str, UserLocationProfile]] = None,
-        fallback_memory: Optional[Any] = None
     ) -> ContextEvidence:
         """
         Extracts and correlates contextual signals from an authentication journey.
@@ -80,22 +105,6 @@ class ContextAnalyzer:
 
         known_devs = set(known_devices) if known_devices else set()
         resolved_known_ips = set(known_ips) if known_ips else set()
-        u_mem = None
-
-        if fallback_memory:
-            try:
-                u_mem = fallback_memory.get_profile(current_user)
-                if u_mem:
-                    if getattr(u_mem, "known_devices", None):
-                        known_devs.update(u_mem.known_devices)
-                    if getattr(u_mem, "primary_device", None) and not primary_device:
-                        primary_device = u_mem.primary_device
-                    if getattr(u_mem, "known_ips", None):
-                        resolved_known_ips.update(u_mem.known_ips)
-                    if getattr(u_mem, "primary_ip", None) and not primary_ip:
-                        primary_ip = u_mem.primary_ip
-            except Exception:
-                u_mem = None
 
         if not primary_device and len(known_devs) == 1:
             primary_device = list(known_devs)[0]
@@ -155,18 +164,7 @@ class ContextAnalyzer:
             # Sequential IP changes
             if event.ip_address:
                 if last_ip_event is not None and event.ip_address != last_ip_event.ip_address:
-                    is_same_subnet = None
-                    try:
-                        ip1 = ipaddress.ip_address(last_ip_event.ip_address)
-                        ip2 = ipaddress.ip_address(event.ip_address)
-                        if ip1.version == ip2.version == 4:
-                            net1 = ipaddress.ip_network(f"{last_ip_event.ip_address}/24", strict=False)
-                            is_same_subnet = (ip2 in net1)
-                        elif ip1.version == ip2.version == 6:
-                            net1 = ipaddress.ip_network(f"{last_ip_event.ip_address}/64", strict=False)
-                            is_same_subnet = (ip2 in net1)
-                    except Exception:
-                        is_same_subnet = None
+                    is_same_subnet = _is_same_subnet(last_ip_event.ip_address, event.ip_address)
 
                     if is_same_subnet:
                         notes.append(f"Sequential IP delta occurred within same /24 subnet: {last_ip_event.ip_address} ➔ {event.ip_address}.")
@@ -386,17 +384,17 @@ class ContextAnalyzer:
             a.anomaly_type == "IP_CHANGE" and not getattr(a, "subnet_continuity", False)
             for a in context_anomalies
         )
+        baseline_ips = set(resolved_known_ips)
+        if primary_ip:
+            baseline_ips.add(primary_ip)
+
         is_primary_ip_matched = None
         if has_disparate_ip_change:
             is_primary_ip_matched = False
-        elif detected_ip and u_mem is not None and (primary_ip or resolved_known_ips):
-            is_primary_ip_matched = u_mem.matches_primary_ip(detected_ip)
-        elif detected_ip and primary_ip:
-            is_primary_ip_matched = (detected_ip == primary_ip)
-        elif detected_ip and resolved_known_ips:
-            is_primary_ip_matched = (detected_ip in resolved_known_ips)
+        elif detected_ip and baseline_ips:
+            is_primary_ip_matched = _ip_matches_baseline(detected_ip, baseline_ips)
         elif detected_ip and not has_disparate_ip_change:
-            is_primary_ip_matched = True if not resolved_known_ips else False
+            is_primary_ip_matched = True
 
         return ContextEvidence(
             is_new_device=is_new_device,

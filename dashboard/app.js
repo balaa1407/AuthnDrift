@@ -391,7 +391,7 @@ function renderAlertDetails(alert, journey) {
           ${caseCategory ? `<span class="badge" style="background: rgba(99, 102, 241, 0.16); color: #a5b4fc; border: 1px solid rgba(99, 102, 241, 0.35); font-size: 0.65rem; font-family: var(--font-mono);">${escapeHtml(caseCategory)}</span>` : ''}
         </div>
         <p style="color: var(--text-muted); font-size: 0.75rem; font-family: var(--font-mono);">
-          Alert ID: ${escapeHtml(alert.alert_id)} &bull; Priority: ${escapeHtml(alert.priority || 'INFORMATIONAL')} &bull; Actionable: ${alert.is_actionable ? '🚨 Yes' : 'ℹ️ No'}${recovClass ? ` &bull; Calibration: ${escapeHtml(recovClass)}` : ''}
+          Alert ID: ${escapeHtml(alert.alert_id)} &bull; Priority: ${escapeHtml(alert.priority || 'INFORMATIONAL')} &bull; Actionable: ${alert.is_actionable ? '🚨 Yes' : 'ℹ️ No'}${recovClass ? ` &bull; Outcome: ${escapeHtml(recovClass)}` : ''}
         </p>
       </div>
       <div class="risk-badge ${sevClass}">
@@ -543,47 +543,7 @@ function renderAlertDetails(alert, journey) {
         </div>
       </div>
     ` : ''}
-
-    <div style="margin-top: 0.5rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-        <h4 class="section-title" style="margin: 0;">Research &amp; Calibration Inference</h4>
-        <button id="btn-run-calibration" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.72rem;">
-          Run Calibration Audit
-        </button>
-      </div>
-      <div id="calibration-result-box" style="background: rgba(13, 20, 36, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.78rem; color: var(--text-secondary);">
-        Click <strong>Run Calibration Audit</strong> to verify confidence scoring, academic citation, and fallback memory alignment for this journey.
-      </div>
-    </div>
   `;
-
-  const btnCalib = document.getElementById('btn-run-calibration');
-  if (btnCalib) {
-    btnCalib.addEventListener('click', async () => {
-      const box = document.getElementById('calibration-result-box');
-      box.innerHTML = '<span style="color: var(--text-muted);">Running calibration audit...</span>';
-      try {
-        const res = await fetch('/api/llm/calibrate-journey', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: alert.user_id, session_id: alert.session_id || journey?.session_id || null })
-        });
-        if (!res.ok) throw new Error('Calibration endpoint failed');
-        const c = await res.json();
-        const confPct = Math.round((c.confidence_score || 0) * 100);
-        box.innerHTML = `
-          <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem;">
-            <span><strong>Classification:</strong> <code>${escapeHtml(c.classification)}</code> (${escapeHtml(c.case_category)})</span>
-            <span><strong>Confidence:</strong> <span style="color: #38bdf8; font-weight: 700;">${confPct}%</span> &bull; <strong>Action:</strong> <code>${escapeHtml(c.recommended_action)}</code></span>
-          </div>
-          <p style="margin: 0.25rem 0; color: #e2e8f0; line-height: 1.45;">${escapeHtml(c.reasoning)}</p>
-          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.35rem;">Citation: ${escapeHtml(c.research_citation)}</div>
-        `;
-      } catch (err) {
-        box.innerHTML = `<span style="color: #f87171;">Calibration failed: ${escapeHtml(err.message)}</span>`;
-      }
-    });
-  }
 }
 
 // 5. Filter Logic (Section D)
@@ -737,78 +697,6 @@ document.getElementById('btn-submit-ingest').addEventListener('click', async () 
     alert('Invalid JSON or Pipeline Error: ' + err.message);
   }
 });
-
-// Fallback Memory Modal Controls
-const memoryModal = document.getElementById('modal-memory');
-const btnOpenMemory = document.getElementById('btn-open-memory');
-const btnCloseMemory = document.getElementById('btn-close-memory-modal');
-const btnSaveBaseline = document.getElementById('btn-save-baseline');
-
-async function loadFallbackMemory() {
-  const listEl = document.getElementById('memory-profiles-list');
-  if (!listEl) return;
-  try {
-    const res = await fetch('/api/llm/fallback-memory');
-    if (!res.ok) throw new Error('Failed to load fallback memory');
-    const data = await res.json();
-    const entries = Object.values(data.profiles || {});
-    if (entries.length === 0) {
-      listEl.innerHTML = '<p style="font-size: 0.78rem; color: var(--text-muted);">No baselines explicitly registered yet. Register a primary device and IP above to track continuity history.</p>';
-      return;
-    }
-    listEl.innerHTML = entries.map(p => `
-      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 0.6rem 0.8rem; font-size: 0.75rem;">
-        <div style="display: flex; justify-content: space-between; font-weight: 700; color: #f8fafc;">
-          <span>👤 ${escapeHtml(p.user_id)}</span>
-          <span style="color: #34d399; font-family: var(--font-mono);">Recoveries: ${p.verified_recovery_count || 0}</span>
-        </div>
-        <div style="color: var(--text-secondary); margin-top: 0.25rem; font-family: var(--font-mono); font-size: 0.7rem;">
-          Device: <code>${escapeHtml(p.primary_device || 'None')}</code> &bull; IP: <code>${escapeHtml(p.primary_ip || 'None')}</code>
-        </div>
-      </div>
-    `).join('');
-  } catch (err) {
-    listEl.innerHTML = `<p style="font-size: 0.78rem; color: #f87171;">Error loading memory: ${escapeHtml(err.message)}</p>`;
-  }
-}
-
-if (btnOpenMemory && memoryModal) {
-  btnOpenMemory.addEventListener('click', () => {
-    memoryModal.classList.add('active');
-    loadFallbackMemory();
-  });
-}
-
-if (btnCloseMemory && memoryModal) {
-  btnCloseMemory.addEventListener('click', () => memoryModal.classList.remove('active'));
-}
-
-if (btnSaveBaseline) {
-  btnSaveBaseline.addEventListener('click', async () => {
-    const userId = document.getElementById('mem-user-id').value.trim();
-    const primaryDevice = document.getElementById('mem-primary-device').value.trim();
-    const primaryIp = document.getElementById('mem-primary-ip').value.trim();
-    if (!userId) {
-      alert('Please specify a User Identifier.');
-      return;
-    }
-    try {
-      const res = await fetch('/api/llm/register-baseline', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          primary_device: primaryDevice || null,
-          primary_ip: primaryIp || null
-        })
-      });
-      if (!res.ok) throw new Error('Registration failed');
-      await loadFallbackMemory();
-    } catch (err) {
-      alert('Error registering baseline: ' + err.message);
-    }
-  });
-}
 
 // Initial boot
 loadData();

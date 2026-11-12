@@ -63,9 +63,6 @@
         <span class="status-indicator online"></span>
         <span>ABUSEIPDB: ACTIVE</span>
       </div>
-      <button class="btn btn-secondary" id="btn-open-memory">
-        <span>Fallback Memory</span>
-      </button>
       <button class="btn btn-primary btn-glow" id="btn-open-ingest">
         <span class="btn-sparkle">⚡</span>
         <span>Ingest Telemetry</span>
@@ -300,44 +297,6 @@
           <button class="btn btn-ghost" id="btn-sample-kc">Load Keycloak Sample</button>
           <button class="btn btn-ghost" id="btn-sample-okta">Load Okta Sample</button>
           <button class="btn btn-primary btn-glow" id="btn-submit-ingest">Normalize &amp; Run Pipeline</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Fallback Memory & Baseline Registration Modal -->
-  <div class="modal" id="modal-memory">
-    <div class="modal-dialog">
-      <div class="modal-header">
-        <div class="modal-title-row">
-          <span class="modal-icon">🧠</span>
-          <h3>Fallback Memory &amp; Client Continuity Baselines</h3>
-        </div>
-        <button class="btn-close" id="btn-close-memory-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label for="mem-user-id">User Identifier:</label>
-          <input type="text" id="mem-user-id" class="text-input" placeholder="e.g., bob">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-          <div class="form-group">
-            <label for="mem-primary-device">Primary Device ID:</label>
-            <input type="text" id="mem-primary-device" class="text-input" placeholder="e.g., laptop-01">
-          </div>
-          <div class="form-group">
-            <label for="mem-primary-ip">Primary IP / Subnet:</label>
-            <input type="text" id="mem-primary-ip" class="text-input" placeholder="e.g., 192.168.1.10">
-          </div>
-        </div>
-        <div class="modal-actions" style="justify-content: flex-end; margin-bottom: 1rem;">
-          <button class="btn btn-primary btn-glow" id="btn-save-baseline">Register Baseline</button>
-        </div>
-        <div>
-          <h4 class="section-title">Registered Identity Profiles</h4>
-          <div id="memory-profiles-list" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem;">
-            <p style="font-size: 0.8rem; color: var(--text-muted);">Loading profiles...</p>
-          </div>
         </div>
       </div>
     </div>
