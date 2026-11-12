@@ -5,7 +5,7 @@ explicit authenticator registrations, sequential telemetry deltas, and failure s
 """
 
 import ipaddress
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set
 from backend.models.event import AuthenticationEvent
 from backend.models.detection import ContextAnomaly, ContextEvidence
@@ -24,36 +24,70 @@ REGISTRATION_EVENT_TYPES: Set[str] = {
 }
 
 
+def _utc_sort_key(ts: Optional[datetime]) -> datetime:
+    """Normalizes timestamps to UTC-aware datetimes so naive and aware timestamps sort safely."""
+    if ts is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if ts.tzinfo is None:
+        return ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(timezone.utc)
+
+
+def _is_valid_ip(ip_str: Optional[str]) -> bool:
+    """Returns True iff ip_str parses cleanly as an IPv4 or IPv6 address."""
+    if not ip_str or not isinstance(ip_str, str):
+        return False
+    cleaned = ip_str.strip().strip("[]")
+    if not cleaned:
+        return False
+    try:
+        ipaddress.ip_address(cleaned)
+        return True
+    except ValueError:
+        return False
+
+
 def _is_same_subnet(ip_a: str, ip_b: str) -> Optional[bool]:
     """
     Returns True if ip_a and ip_b belong to the same /24 (IPv4) or /64 (IPv6) subnet,
     False if disparate subnets, or None if either address is invalid.
     """
+    if not _is_valid_ip(ip_a) or not _is_valid_ip(ip_b):
+        return None
     try:
-        addr_a = ipaddress.ip_address(ip_a)
-        addr_b = ipaddress.ip_address(ip_b)
+        addr_a = ipaddress.ip_address(ip_a.strip().strip("[]"))
+        addr_b = ipaddress.ip_address(ip_b.strip().strip("[]"))
         if addr_a.version != addr_b.version:
             return False
         prefix = 24 if addr_a.version == 4 else 64
-        net_a = ipaddress.ip_network(f"{ip_a}/{prefix}", strict=False)
+        net_a = ipaddress.ip_network(f"{addr_a}/{prefix}", strict=False)
         return addr_b in net_a
     except ValueError:
         return None
 
 
-def _ip_matches_baseline(ip_addr: str, baseline_ips: Set[str]) -> bool:
+def _ip_matches_baseline(ip_addr: str, baseline_ips: Set[str]) -> Optional[bool]:
     """
-    Evaluates whether ip_addr matches any baseline IP directly or within the same /24 (IPv4) / /64 (IPv6) subnet.
+    Evaluates whether valid ip_addr matches any valid baseline IP directly or within the same /24 (IPv4) / /64 (IPv6) subnet.
+    Returns None if ip_addr is invalid or baseline_ips contains no valid IP addresses.
     """
-    if ip_addr in baseline_ips:
-        return True
-    return any(_is_same_subnet(cand, ip_addr) is True for cand in baseline_ips)
+    if not _is_valid_ip(ip_addr):
+        return None
+    valid_candidates = [cand for cand in baseline_ips if _is_valid_ip(cand)]
+    if not valid_candidates:
+        return None
+    target_addr = ipaddress.ip_address(ip_addr.strip().strip("[]"))
+    for cand in valid_candidates:
+        cand_addr = ipaddress.ip_address(cand.strip().strip("[]"))
+        if target_addr == cand_addr or _is_same_subnet(str(cand_addr), str(target_addr)) is True:
+            return True
+    return False
 
 
 class ContextAnalyzer:
     """
     Analyzes contextual signals and telemetry deltas across the full event sequence.
-    Strictly avoids fabricating information: missing fields remain None or UNKNOWN.
+    Strictly avoids fabricating information: missing or invalid fields remain None or UNKNOWN.
     Enforces user isolation to avoid cross-user contamination.
     Emits discrete ContextAnomaly records for geographic, IP, and device deviations.
     """
@@ -69,6 +103,7 @@ class ContextAnalyzer:
         primary_ip: Optional[str] = None,
         location_profiler: Optional[LocationProfiler] = None,
         user_profiles: Optional[Dict[str, UserLocationProfile]] = None,
+        user_baselines: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> ContextEvidence:
         """
         Extracts and correlates contextual signals from an authentication journey.
@@ -90,7 +125,7 @@ class ContextAnalyzer:
         # Sort chronologically by timestamp
         sorted_journey = sorted(
             journey,
-            key=lambda e: e.timestamp if e.timestamp else datetime.min
+            key=lambda e: _utc_sort_key(e.timestamp)
         )
 
         # Deduplicate events by event_id to prevent log-replay artifacting
@@ -103,8 +138,22 @@ class ContextAnalyzer:
                 seen_ids.add(event.event_id)
             deduped_journey.append(event)
 
+        # Per-user baseline isolation: if user_baselines dict is configured, use ONLY current_user's baselines
         known_devs = set(known_devices) if known_devices else set()
         resolved_known_ips = set(known_ips) if known_ips else set()
+
+        if user_baselines and current_user in user_baselines:
+            u_base = user_baselines[current_user] or {}
+            if "known_devices" in u_base and u_base["known_devices"] is not None:
+                known_devs = set(u_base["known_devices"])
+            if u_base.get("primary_device"):
+                primary_device = u_base["primary_device"]
+                known_devs.add(primary_device)
+            if "known_ips" in u_base and u_base["known_ips"] is not None:
+                resolved_known_ips = set(u_base["known_ips"])
+            if u_base.get("primary_ip"):
+                primary_ip = u_base["primary_ip"]
+                resolved_known_ips.add(primary_ip)
 
         if not primary_device and len(known_devs) == 1:
             primary_device = list(known_devs)[0]
@@ -391,10 +440,11 @@ class ContextAnalyzer:
         is_primary_ip_matched = None
         if has_disparate_ip_change:
             is_primary_ip_matched = False
+        elif detected_ip and not _is_valid_ip(detected_ip):
+            is_primary_ip_matched = None
+            notes.append(f"Invalid IP address format observed: '{detected_ip}'; baseline match left UNKNOWN.")
         elif detected_ip and baseline_ips:
             is_primary_ip_matched = _ip_matches_baseline(detected_ip, baseline_ips)
-        elif detected_ip and not has_disparate_ip_change:
-            is_primary_ip_matched = True
 
         return ContextEvidence(
             is_new_device=is_new_device,
@@ -412,5 +462,6 @@ class ContextAnalyzer:
             is_primary_device_matched=is_primary_device_matched,
             is_primary_ip_matched=is_primary_ip_matched,
             evidence_notes=notes,
-            context_anomalies=context_anomalies
+            context_anomalies=context_anomalies,
+            vpn_proxy_status="NOT_VERIFIED",
         )

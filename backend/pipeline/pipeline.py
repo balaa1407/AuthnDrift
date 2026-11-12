@@ -93,7 +93,10 @@ class PipelineExecutionResult:
                             "anomaly_type": anom.anomaly_type,
                             "previous_value": anom.previous_value,
                             "current_value": anom.current_value,
-                            "lifecycle_stage": anom.lifecycle_stage
+                            "lifecycle_stage": anom.lifecycle_stage,
+                            "velocity_kmh": getattr(anom, "velocity_kmh", None),
+                            "is_impossible_travel": getattr(anom, "is_impossible_travel", False),
+                            "subnet_continuity": getattr(anom, "subnet_continuity", None),
                         }
                         for anom in getattr(self.alerts[i], "context_anomalies", [])
                     ] if i < len(self.alerts) else [],
@@ -188,6 +191,7 @@ class PipelineExecutionResult:
                         "is_primary_ip_matched": getattr(a.context_evidence, "is_primary_ip_matched", None),
                         "recovery_classification": getattr(a.context_evidence, "recovery_classification", None),
                         "case_category": getattr(a.context_evidence, "case_category", None),
+                        "vpn_proxy_status": getattr(a.context_evidence, "vpn_proxy_status", "NOT_VERIFIED"),
                         "prior_failures_count": a.context_evidence.prior_failures_count,
                         "evidence_notes": a.context_evidence.evidence_notes,
                         "context_anomalies": [
@@ -245,11 +249,12 @@ class AuthDriftPipeline:
             "okta": OktaEventNormalizer()
         }
 
-        # Baseline contextual baseline profiles for evaluation (aligned with test_scenarios baseline)
+        # Baseline profiles for evaluation (in-memory only; see docs/SECURITY_ENGINE_ARCHITECTURE.md)
         self.known_devices: Set[str] = {"corporate-macbook-01", "pixel-9-pro", "laptop-01"}
         self.known_locations: Optional[Set[str]] = None
         self.known_authenticators: Set[str] = {"corporate-yubikey-01", "key-01"}
         self.known_ips: Optional[Set[str]] = None
+        self.user_baselines: Dict[str, Dict[str, Any]] = {}
 
     def register_normalizer(self, provider_name: str, normalizer: BaseEventNormalizer) -> None:
         """Allows registering custom or third-party identity provider normalizers."""
@@ -318,7 +323,8 @@ class AuthDriftPipeline:
                 known_ips=self.known_ips,
                 location_profiler=journey_profiler,
                 session_id=journey.session_id,
-                reputation_service=self.reputation_service
+                reputation_service=self.reputation_service,
+                user_baselines=self.user_baselines or None,
             )
             alerts.append(alert)
 

@@ -185,16 +185,16 @@ function renderJourneys(filteredJourneys) {
 
       let contextTagsHtml = '';
       if (ev.device_id) {
-        contextTagsHtml += `<span class="context-tag" title="Device">💻 ${ev.device_id}</span>`;
+        contextTagsHtml += `<span class="context-tag" title="Device">💻 ${escapeHtml(ev.device_id)}</span>`;
       }
       if (ev.location) {
-        contextTagsHtml += `<span class="context-tag" title="Geographic Location">📍 ${ev.location}</span>`;
+        contextTagsHtml += `<span class="context-tag" title="Geographic Location">📍 ${escapeHtml(ev.location)}</span>`;
       }
       if (ev.ip_address) {
-        contextTagsHtml += `<span class="context-tag" title="IP Address">🌐 ${ev.ip_address}</span>`;
+        contextTagsHtml += `<span class="context-tag" title="IP Address">🌐 ${escapeHtml(ev.ip_address)}</span>`;
       }
       if (ev.authenticator_id) {
-        contextTagsHtml += `<span class="context-tag" title="Authenticator ID">🔑 ${ev.authenticator_id}</span>`;
+        contextTagsHtml += `<span class="context-tag" title="Authenticator ID">🔑 ${escapeHtml(ev.authenticator_id)}</span>`;
       }
       if (!contextTagsHtml) {
         contextTagsHtml = `<span class="context-tag" style="opacity: 0.5;">Context Unavailable</span>`;
@@ -203,10 +203,10 @@ function renderJourneys(filteredJourneys) {
       stepsHtml += `
         <div class="timeline-step ${isSuccess ? 'step-success' : 'step-failure'}">
           <div class="step-left">
-            <span class="badge-category" style="font-size: 0.65rem; background: rgba(255, 255, 255, 0.08); padding: 2px 6px; border-radius: 4px; color: var(--text-muted);">${category}</span>
+            <span class="badge-category" style="font-size: 0.65rem; background: rgba(255, 255, 255, 0.08); padding: 2px 6px; border-radius: 4px; color: var(--text-muted);">${escapeHtml(category)}</span>
             ${assuranceBadge}
-            <span class="step-method">${ev.authentication_method}</span>
-            <span class="badge-outcome outcome-${isSuccess ? 'success' : 'failure'}">${ev.outcome}</span>
+            <span class="step-method">${escapeHtml(ev.authentication_method || 'unknown')}</span>
+            <span class="badge-outcome outcome-${isSuccess ? 'success' : 'failure'}">${escapeHtml(ev.outcome)}</span>
             <div class="step-context">${contextTagsHtml}</div>
           </div>
           <span class="step-time">${formatDate(ev.timestamp)}</span>
@@ -243,10 +243,10 @@ function renderJourneys(filteredJourneys) {
       <div class="journey-header">
         <div class="user-badge">
           <span class="icon">👤</span>
-          <span>${journey.user_id}</span>
-          <span class="badge-alert-type ${alertTypeClass}">${alertType.replace('_', ' ')}</span>
+          <span>${escapeHtml(journey.user_id)}</span>
+          <span class="badge-alert-type ${alertTypeClass}">${escapeHtml(alertType.replace('_', ' '))}</span>
           ${matchedAlert?.is_recovery_candidate ? '<span class="badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.65rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.4);">RECOVERY CANDIDATE</span>' : ''}
-          ${journey.session_id ? `<span class="badge" style="font-size: 0.65rem;">${journey.session_id}</span>` : ''}
+          ${journey.session_id ? `<span class="badge" style="font-size: 0.65rem;">${escapeHtml(journey.session_id)}</span>` : ''}
         </div>
         <div class="time-range">${formatDate(firstTime)} - ${formatDate(lastTime)} (${journey.event_count} events)</div>
       </div>
@@ -433,23 +433,23 @@ function renderAlertDetails(alert, journey) {
         <div class="transition-node">
           <span class="transition-node-label">Prior Method & Assurance</span>
           <span class="transition-node-val">
-            ${drift.previous_method || 'None'}
-            ${drift.previous_assurance ? `(${drift.previous_assurance})` : ''}
+            ${escapeHtml(drift.previous_method || 'None')}
+            ${drift.previous_assurance ? `(${escapeHtml(drift.previous_assurance)})` : ''}
           </span>
-          ${alert.source_event_id ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">Event: <code>${alert.source_event_id}</code></span>` : ''}
+          ${alert.source_event_id ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">Event: <code>${escapeHtml(alert.source_event_id)}</code></span>` : ''}
         </div>
         <div class="transition-arrow">➔</div>
         <div class="transition-node">
           <span class="transition-node-label">Subsequent Method & Assurance</span>
           <span class="transition-node-val">
-            ${drift.current_method || 'None'}
-            ${drift.current_assurance ? `(${drift.current_assurance})` : ''}
+            ${escapeHtml(drift.current_method || 'None')}
+            ${drift.current_assurance ? `(${escapeHtml(drift.current_assurance)})` : ''}
           </span>
-          ${alert.target_event_id ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">Event: <code>${alert.target_event_id}</code></span>` : ''}
+          ${alert.target_event_id ? `<span style="font-size: 0.65rem; color: var(--text-muted); margin-top: 2px;">Event: <code>${escapeHtml(alert.target_event_id)}</code></span>` : ''}
         </div>
       </div>
       <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
-        <strong>Detection Rule:</strong> <code>${drift.transition_type || 'NORMAL_JOURNEY'}</code> &bull;
+        <strong>Detection Rule:</strong> <code>${escapeHtml(drift.transition_type || 'NORMAL_JOURNEY')}</code> &bull;
         <strong>Status:</strong> ${alert.drift_detected ? '<span style="color: #fda4af; font-weight: 700;">DRIFT DETECTED</span>' : '<span style="color: #34d399; font-weight: 700;">NO DRIFT DETECTED</span>'}
       </div>
       ${alert.cryptographic_boundary ? `
@@ -467,7 +467,7 @@ function renderAlertDetails(alert, journey) {
     <div>
       <h4 class="section-title">Detection Explanation</h4>
       <div class="explanation-box">
-        ${alert.explanation}
+        ${escapeHtml(alert.explanation)}
       </div>
     </div>
 
@@ -481,7 +481,7 @@ function renderAlertDetails(alert, journey) {
         <div class="evidence-item">
           <div class="evidence-key">Device Status</div>
           ${formatFlag(evidence.is_new_device)}
-          ${evidence.device_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">ID: ${evidence.device_id}</div>` : ''}
+          ${evidence.device_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">ID: ${escapeHtml(evidence.device_id)}</div>` : ''}
         </div>
 
         ${AuthDriftLocationView.buildLocationFieldsHtml({
@@ -506,7 +506,12 @@ function renderAlertDetails(alert, journey) {
         <div class="evidence-item">
           <div class="evidence-key">Authenticator Registration</div>
           ${evidence.authenticator_registered ? '<span class="evidence-val flagged">⚠️ Explicitly Registered</span>' : '<span class="evidence-val">None (Usage Only)</span>'}
-          ${evidence.authenticator_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">Key ID: ${evidence.authenticator_id}</div>` : ''}
+          ${evidence.authenticator_id ? `<div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">Key ID: ${escapeHtml(evidence.authenticator_id)}</div>` : ''}
+        </div>
+
+        <div class="evidence-item">
+          <div class="evidence-key">VPN / Proxy Telemetry</div>
+          <span class="evidence-val" style="color: var(--text-muted);">${escapeHtml(evidence.vpn_proxy_status || alert.vpn_proxy_status || 'NOT_VERIFIED')}</span>
         </div>
 
         <div class="evidence-item">

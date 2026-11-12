@@ -103,7 +103,7 @@ AuthnDrift/
 ├── dashboard/                   # Interactive web visualizer (Vanilla HTML/CSS/JS)
 ├── keycloak/                    # Keycloak realm configuration & fixture generator
 ├── sample-data/                 # Pre-generated reproducible test datasets
-└── tests/                       # Pytest test suite (187 test cases)
+└── tests/                       # Automated pytest verification suite
 ```
 
 ---
@@ -198,29 +198,23 @@ AuthDrift includes a simulation test matrix covering 5 distinct verification cat
 
 ---
 
-## 🔬 Academic Research Grounding & Synthetic Benchmark
+## 🔬 Synthetic Benchmark & Academic Literature
 
-To satisfy academic rigour and address project guide feedback regarding the distinction between genuine recovery and true attacks, AuthDrift incorporates an empirical synthetic dataset generator (`sample-data/research_paper_synthetic_dataset.json`) containing **100 enterprise authentication journeys** directly grounded in published research literature:
+AuthDrift includes a reproducible synthetic dataset generator (`sample-data/research_paper_synthetic_dataset.json`) containing **145 synthetic enterprise authentication journeys** aligned with concepts from published authentication and risk-based security literature (the cohort counts below are synthetic benchmark parameters, not empirical measurements from those studies):
 
-1. **Lyastani et al. (IEEE S&P / Oakland 2020)**: *"Is FIDO2 the Kingslayer of User Authentication? A Comprehensive Req2Prot Analysis of FIDO2 Protocols and Implementations."*
-   - Models fallback ceremonies when WebAuthn fails (token forgotten, browser timeout, dialogue cancellation).
-   - Captures adversarial downgrade exploitation on new client devices and foreign IPs.
-2. **Wiefling et al. (ACM ASIACCS 2020 / ACSAC 2021)**: *"What's in a Name? Evaluating Risk-Based Authentication Context."*
-   - Proves empirically that $\ge 92\%$ of genuine user fallbacks occur on habitual client hardware and network subnets.
-   - Genuine user recovery retains device and IP continuity; adversarial logins exhibit novel endpoints.
-3. **Kent, A. D. (Los Alamos National Laboratory - LANL, 2016)**: *"Comprehensive, Multi-Source Cyber-Security Events."*
-   - Provides realistic enterprise authentication volume distributions: 60% routine logins, 15% benign recoveries, 15% adversarial drift attacks, 10% threat-intelligence hits.
-4. **Bonneau et al. (IEEE S&P / Oakland 2012)**: *"The Quest to Replace Passwords: A Framework for Comparative Evaluation."*
-   - Establishes assurance level transitions and comparative recovery ceremony risks.
+1. **Lyastani et al. (IEEE S&P 2020)**: *"Is FIDO2 the Kingslayer of User Authentication? A Comparative Usability Study."* — Examines FIDO2/WebAuthn usability, account recovery friction, and fallback challenges.
+2. **Wiefling et al. (ACSAC 2020)**: *"More Than Just Good Passwords? A Study on Usability and Security Perceptions of Risk-Based Authentication."* — Examines risk-based contextual verification during login and fallback flows.
+3. **Kent, A. D. (LANL 2015/2016)**: *"Comprehensive, Multi-Source Cyber-Security Events."* — Enterprise multi-source authentication event schema and synthetic baseline/anomaly cohort modeling.
+4. **Bonneau et al. (IEEE S&P 2012)**: *"The Quest to Replace Passwords: A Framework for Comparative Evaluation."* — Establishes comparative assurance evaluation frameworks.
+5. **Alaca & van Oorschot (ACSAC 2016)**: *"Device Fingerprinting for Augmenting Web Authentication: Classification and Analysis of Methods."* — Hardware continuity and device fingerprint stability.
+6. **Freeman et al. (NDSS 2016)**: *"Who Are You? A Statistical Approach to Measuring User Authenticity."* — Contextual anomalies, location, and IP-based risk modeling.
+7. **Doerfler et al. / Thomas (WWW 2019)**: *"Evaluating Login Challenges as a Defense Against Account Takeover."* — Account hijacking defenses and suspicious login challenges.
 
-### Benchmark Evaluation Metrics
+### Prototype Limitations
 
-| Cohort | Journey Count | Theoretical Grounding | Empirical Result |
-| :--- | :--- | :--- | :--- |
-| **Cohort 1: Routine Baseline** | 60 | Kent (LANL 2016) | 100% classified as normal; 0 drift alerts; score 0. |
-| **Cohort 2: Benign Client Recovery** | 15 | Wiefling et al. (ACM ASIACCS 2020) | **100% recovery candidate recognition; 0% false positive drift rate (FPR = 0.0%)**. |
-| **Cohort 3: Adversarial Drift** | 15 | Lyastani et al. (IEEE S&P 2020) | **100% true positive detection (Recall = 100.0%)**; score $\ge 70$ (HIGH/CRITICAL). |
-| **Cohort 4: Threat Intelligence** | 10 | AbuseIPDB malicious IP feed | 100% flagged `KNOWN_MALICIOUS`; escalated to `HIGH_PRIORITY`. |
+- **In-Memory Baselines**: User device, IP, and `LocationProfiler` baselines exist strictly in process memory during execution and do not persist across container restarts.
+- **VPN / Proxy Detection (`NOT_VERIFIED`)**: AuthDrift does not infer VPN or proxy usage solely from IP address changes; without an external network-anonymizer telemetry source, `vpn_proxy_status` remains `NOT_VERIFIED`.
+- **No LLM Integration**: All detection, case classification (Cases 1–5), correlation, and scoring execute deterministically without external LLM APIs.
 
 To re-generate or run the benchmark:
 ```bash

@@ -13,32 +13,32 @@
     },
     "research_papers": [
       {
-        "citation": "Lyastani et al., 'Is FIDO2 the Kingslayer of User Authentication? A Comprehensive Req2Prot Analysis', IEEE Symposium on Security and Privacy (S&P), 2020.",
-        "concept": "FIDO2 / WebAuthn fallback ceremonies, downgrade vulnerability windows, token timeout/cancellation handling."
+        "citation": "Lyastani, Schilling, Neumayr, Backes, and Bugiel, 'Is FIDO2 the Kingslayer of User Authentication? A Comparative Usability Study', IEEE Symposium on Security and Privacy (S&P), 2020.",
+        "concept": "FIDO2 / WebAuthn fallback ceremonies, recovery friction, and token timeout/cancellation handling."
       },
       {
-        "citation": "Wiefling et al., 'What's in a Name? Evaluating Risk-Based Authentication Context', ACM ASIACCS, 2020.",
-        "concept": "Contextual stability in legitimate fallback: >=92% of genuine recovery occurs on primary known device and subnet."
+        "citation": "Wiefling, Lo Iacono, and D\u00fcrmuth, 'More Than Just Good Passwords? A Study on Usability and Security Perceptions of Risk-Based Authentication', ACSAC, 2020.",
+        "concept": "Contextual continuity in risk-based authentication (same primary device and network signals during legitimate fallback)."
       },
       {
-        "citation": "Kent, A. D., 'Comprehensive, Multi-Source Cyber-Security Events', Los Alamos National Laboratory (LANL), 2016.",
-        "concept": "Enterprise authentication log distributions and baseline normal vs anomaly ratios."
+        "citation": "Kent, A. D., 'Comprehensive, Multi-Source Cyber-Security Events', Los Alamos National Laboratory (LANL), 2015/2016.",
+        "concept": "Enterprise multi-source authentication event schema and synthetic baseline/anomaly cohort modeling."
       },
       {
-        "citation": "Bonneau et al., 'The Quest to Replace Passwords: A Framework for Comparative Evaluation', IEEE S&P, 2012.",
-        "concept": "Assurance level ordering and credential recovery security boundaries."
+        "citation": "Bonneau, Herley, van Oorschot, and Stajano, 'The Quest to Replace Passwords: A Framework for Comparative Evaluation', IEEE S&P, 2012.",
+        "concept": "Comparative assurance hierarchies and fallback credential boundaries."
       },
       {
-        "citation": "Alaca & van Oorschot, 'Device Fingerprinting for Augmenting Web and Mobile Authentication: A Survey', ACM Computing Surveys (CSUR), 2016.",
+        "citation": "Alaca and van Oorschot, 'Device Fingerprinting for Augmenting Web Authentication: Classification and Analysis of Methods', ACSAC, 2016.",
         "concept": "Hardware continuity verification and device fingerprint stability."
       },
       {
-        "citation": "Freeman et al., 'Who Are You? A Statistical Approach to Measuring User Authenticity', USENIX Security Symposium, 2016.",
-        "concept": "Contextual anomalies, velocity thresholds, and environmental baseline modeling."
+        "citation": "Freeman, Jain, D\u00fcrmuth, Biggio, and Giacinto, 'Who Are You? A Statistical Approach to Measuring User Authenticity', NDSS, 2016.",
+        "concept": "Contextual anomalies, geolocation velocity shifts, and risk-based baseline modeling."
       },
       {
-        "citation": "Thomas et al., 'Investigating Account Takeover at Scale', IEEE Symposium on Security and Privacy (S&P), 2019.",
-        "concept": "Proxy network routing, VPN IP hops, and credential stuffing after authentication fallback."
+        "citation": "Doerfler, Marincenko, Ranieri, Jiang, Moscicki, McCoy, and Thomas, 'Evaluating Login Challenges as a Defense Against Account Takeover', The Web Conference (WWW), 2019.",
+        "concept": "Targeted account hijacking challenges and malicious network activity after authentication fallback."
       }
     ]
   },

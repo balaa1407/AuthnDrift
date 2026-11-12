@@ -39,9 +39,10 @@ logger = logging.getLogger("authdrift.api")
 # Application Start Time for Health Checks
 SERVICE_START_TIME = datetime.now(timezone.utc)
 
-# Global pipeline instance
+# Global pipeline instance and immutable default device baseline copy
 reputation_service = IPReputationService()
 pipeline = AuthDriftPipeline(reputation_service=reputation_service)
+DEFAULT_KNOWN_DEVICES = set(pipeline.known_devices)
 current_result: Optional[PipelineExecutionResult] = None
 
 
@@ -232,15 +233,18 @@ def list_scenarios():
     return {
         "scenarios": [
             {"id": "all", "name": "All Scenarios (TC01-TC11)", "provider": "keycloak"},
-            {"id": "client_recovery", "name": "Benchmark Case Study: Verified Client Recovery (Known Hardware & Subnet ➔ No Drift)", "provider": "keycloak"},
-            {"id": "adversarial_downgrade", "name": "Benchmark Case Study: Adversarial Assurance Downgrade (Unfamiliar Endpoint ➔ Drift Alert)", "provider": "keycloak"},
-            {"id": "research_dataset", "name": "Research Benchmark: 145 Enterprise Journeys (5 Cohorts: Lyastani, Wiefling, LANL, Freeman, Thomas)", "provider": "keycloak"},
+            {"id": "client_recovery", "name": "Benchmark Case Study: Verified Client Recovery (Known Hardware & Subnet -> No Drift)", "provider": "keycloak"},
+            {"id": "adversarial_downgrade", "name": "Benchmark Case Study: Adversarial Assurance Downgrade (Unfamiliar Endpoint -> Drift Alert)", "provider": "keycloak"},
+            {"id": "research_dataset", "name": "Research Benchmark: 145 Synthetic Enterprise Journeys", "provider": "keycloak"},
             {"id": "tc01", "name": "TC01: Known Device Passkey Success (Alice)", "provider": "keycloak"},
             {"id": "tc02", "name": "TC02: Benign Recovery on Known Device (Bob)", "provider": "keycloak"},
             {"id": "tc03", "name": "TC03: Fallback + New Device Context (Carol)", "provider": "keycloak"},
             {"id": "tc04", "name": "TC04: Repeated Failed Logins (Dave)", "provider": "keycloak"},
             {"id": "tc05", "name": "TC05: Downgrade + Rogue Authenticator Registration (Eve)", "provider": "keycloak"},
             {"id": "tc06", "name": "TC06: Legitimate Recovery / Migration (Frank)", "provider": "keycloak"},
+            {"id": "tc07", "name": "TC07: Unknown Authentication Method (Grace)", "provider": "keycloak"},
+            {"id": "tc08", "name": "TC08: Missing Device & Location Context (Heidi)", "provider": "keycloak"},
+            {"id": "tc09", "name": "TC09: Normal Medium-Assurance TOTP Journey (Ivan)", "provider": "keycloak"},
             {"id": "tc10", "name": "TC10: Threat Intelligence: Malicious Public IP (Victor)", "provider": "keycloak"},
             {"id": "tc11", "name": "TC11: Threat Intelligence: Clean Public IP (Wendy)", "provider": "keycloak"},
             {"id": "okta", "name": "Vendor-Neutral Ingestion: Okta System Log (Alex)", "provider": "okta"}
@@ -262,26 +266,32 @@ async def load_scenario(scenario_id: str):
         )
         data = generate_research_synthetic_dataset()
         research_events = data["events"]
-        pipeline.known_devices.update(KNOWN_BENCHMARK_DEVICES)
+        pipeline.known_devices = set(DEFAULT_KNOWN_DEVICES) | set(KNOWN_BENCHMARK_DEVICES)
+    else:
+        pipeline.known_devices = set(DEFAULT_KNOWN_DEVICES)
 
-    bob_events = [e for e in all_events if "bob" in e.get("details", {}).get("username", "")]
-    carol_events = [e for e in all_events if "carol" in e.get("details", {}).get("username", "")]
+    def _by_user(name: str) -> List[Dict[str, Any]]:
+        return [e for e in all_events if name in e.get("details", {}).get("username", "")]
+
+    bob_events = _by_user("bob")
+    carol_events = _by_user("carol")
 
     scenario_map = {
         "all": (all_events, "keycloak"),
         "client_recovery": (bob_events, "keycloak"),
-        "sir_recovery": (bob_events, "keycloak"),  # Backward compatibility alias
         "adversarial_downgrade": (carol_events, "keycloak"),
-        "sir_attack": (carol_events, "keycloak"),  # Backward compatibility alias
         "research_dataset": (research_events if research_events else [], "keycloak"),
-        "tc01": ([e for e in all_events if "alice" in e.get("details", {}).get("username", "")], "keycloak"),
-        "tc02": ([e for e in all_events if "bob" in e.get("details", {}).get("username", "")], "keycloak"),
-        "tc03": ([e for e in all_events if "carol" in e.get("details", {}).get("username", "")], "keycloak"),
-        "tc04": ([e for e in all_events if "dave" in e.get("details", {}).get("username", "")], "keycloak"),
-        "tc05": ([e for e in all_events if "eve" in e.get("details", {}).get("username", "")], "keycloak"),
-        "tc06": ([e for e in all_events if "frank" in e.get("details", {}).get("username", "")], "keycloak"),
-        "tc10": ([e for e in all_events if "victor" in e.get("details", {}).get("username", "")], "keycloak"),
-        "tc11": ([e for e in all_events if "wendy" in e.get("details", {}).get("username", "")], "keycloak"),
+        "tc01": (_by_user("alice"), "keycloak"),
+        "tc02": (bob_events, "keycloak"),
+        "tc03": (carol_events, "keycloak"),
+        "tc04": (_by_user("dave"), "keycloak"),
+        "tc05": (_by_user("eve"), "keycloak"),
+        "tc06": (_by_user("frank"), "keycloak"),
+        "tc07": (_by_user("grace"), "keycloak"),
+        "tc08": (_by_user("heidi"), "keycloak"),
+        "tc09": (_by_user("ivan"), "keycloak"),
+        "tc10": (_by_user("victor"), "keycloak"),
+        "tc11": (_by_user("wendy"), "keycloak"),
         "okta": (generate_okta_fixtures(), "okta")
     }
 

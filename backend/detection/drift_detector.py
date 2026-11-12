@@ -5,7 +5,7 @@ with explicit chronological transition logic, pure state-machine invariants,
 and supporting empirical evidence.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, Set
 from backend.models.event import AuthenticationEvent, EventCategory
 from backend.models.detection import DriftResult
@@ -48,6 +48,15 @@ def _is_failure_outcome(outcome: Optional[str]) -> bool:
     return str(outcome).strip().upper() in ["FAILURE", "FAILED", "ERROR"]
 
 
+def _utc_sort_key(ts: Optional[datetime]) -> datetime:
+    """Returns a timezone-aware UTC datetime for safe chronological sorting."""
+    if ts is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if ts.tzinfo is None:
+        return ts.replace(tzinfo=timezone.utc)
+    return ts.astimezone(timezone.utc)
+
+
 class DriftDetector:
     """
     Evaluates authentication journeys for assurance drift using strict state-machine logic.
@@ -86,10 +95,10 @@ class DriftDetector:
                 reason="Insufficient events in journey to detect drift (minimum 2 required)."
             )
 
-        # 1. Defensively ensure events are chronologically ordered (handle None timestamps safely)
+        # 1. Defensively ensure events are chronologically ordered (handle None/naive timestamps safely)
         sorted_journey = sorted(
             journey,
-            key=lambda e: e.timestamp if e.timestamp else datetime.min
+            key=lambda e: _utc_sort_key(e.timestamp)
         )
 
         # 2. Deduplicate repeated events by event_id to prevent log-replay artifacting

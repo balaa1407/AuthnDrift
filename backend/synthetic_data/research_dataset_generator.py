@@ -1,30 +1,27 @@
 """
-AuthDrift: Comprehensive Research Paper-Grounded Synthetic Dataset Generator.
-Fulfills Person 1 Task 1: Generates enterprise authentication event sequences
-directly grounded in published academic research on authentication ceremonies,
-FIDO2 fallback vulnerabilities, client continuity, and threat intelligence.
+AuthDrift: Synthetic Research Benchmark Dataset Generator.
+Generates reproducible enterprise authentication event sequences aligned with
+published authentication and risk-based security literature.
 
-Academic Provenance:
-1. Lyastani et al. (IEEE S&P 2020): "Is FIDO2 the Kingslayer of User Authentication?"
-   - Documents fallback ceremonies when WebAuthn fails (token forgotten, OS timeout, prompt cancelled).
-   - Identifies downgrade vulnerability window where attackers exploit weaker fallback factors.
-2. Wiefling et al. (ACM ASIACCS 2020 / ACSAC 2021): "Evaluating Risk-Based Authentication Context"
-   - Demonstrates empirically that >= 92% of genuine user fallbacks occur on habitual devices and subnets.
-   - Genuine recovery retains client device and IP continuity; adversary logins show new endpoints.
-3. Kent, A. D. (Los Alamos National Laboratory - LANL, 2016): "Cyber-Security Authentication Events"
-   - Models realistic enterprise authentication telemetry distributions:
-     ~60% routine single-ceremony logins, ~15% benign client fallbacks/recoveries,
-     ~15% adversarial downgrades, ~10% external threat-matched events.
-4. Bonneau et al. (IEEE S&P 2012): "The Quest to Replace Passwords"
-   - Establishes relative assurance level hierarchies and comparative fallback ceremony evaluation.
-5. Alaca & van Oorschot (ACM CSUR 2016): "Device Fingerprinting for Augmenting Web and Mobile Authentication"
-   - Analyzes device continuity, identifier stability, and hardware spoofing resistance.
-6. Freeman et al. (USENIX Security 2016): "Behavioral Biometrics and Contextual Authentication"
-   - Models environmental drift, impossible travel velocity thresholds, and mobile IP subnet hops.
-7. Thomas et al. (IEEE S&P 2019): "Protecting Accounts at Scale"
-   - Empirical study of credential stuffing, residential proxy networks, and VPN routing during account takeover.
+Academic References (verified titles & venues; cohort proportions below are
+synthetic benchmark parameters rather than empirical measurements from those studies):
+1. Lyastani et al. (IEEE S&P 2020): "Is FIDO2 the Kingslayer of User Authentication? A Comparative Usability Study"
+   - Examines FIDO2/WebAuthn usability, account recovery friction, and fallback challenges.
+2. Wiefling et al. (ACSAC 2020): "More Than Just Good Passwords? A Study on Usability and Security Perceptions of Risk-Based Authentication"
+   - Studies risk-based contextual verification during login and fallback flows.
+3. Kent, A. D. (LANL 2015/2016): "Comprehensive, Multi-Source Cyber-Security Events"
+   - Multi-source enterprise authentication dataset benchmark.
+4. Bonneau et al. (IEEE S&P 2012): "The Quest to Replace Passwords: A Framework for Comparative Evaluation"
+   - Establishes comparative security/deployability criteria across authentication mechanisms.
+5. Alaca & van Oorschot (ACSAC 2016): "Device Fingerprinting for Augmenting Web Authentication: Classification and Analysis of Methods"
+   - Taxonomy and stability evaluation of device fingerprinting to augment authentication.
+6. Freeman et al. (NDSS 2016): "Who Are You? A Statistical Approach to Measuring User Authenticity"
+   - Evaluates IP, location, and client signals for risk-based authentication.
+7. Doerfler et al. / Thomas (WWW 2019): "Evaluating Login Challenges as a Defense Against Account Takeover"
+   - Evaluates login challenges against hijacking and account-takeover flows.
 """
 
+from collections import Counter
 from datetime import datetime, timezone
 import json
 import os
@@ -34,32 +31,32 @@ from backend.synthetic_data.dataset_validator import DatasetValidator
 
 RESEARCH_PAPERS = [
     {
-        "citation": "Lyastani et al., 'Is FIDO2 the Kingslayer of User Authentication? A Comprehensive Req2Prot Analysis', IEEE Symposium on Security and Privacy (S&P), 2020.",
-        "concept": "FIDO2 / WebAuthn fallback ceremonies, downgrade vulnerability windows, token timeout/cancellation handling."
+        "citation": "Lyastani, Schilling, Neumayr, Backes, and Bugiel, 'Is FIDO2 the Kingslayer of User Authentication? A Comparative Usability Study', IEEE Symposium on Security and Privacy (S&P), 2020.",
+        "concept": "FIDO2 / WebAuthn fallback ceremonies, recovery friction, and token timeout/cancellation handling."
     },
     {
-        "citation": "Wiefling et al., 'What's in a Name? Evaluating Risk-Based Authentication Context', ACM ASIACCS, 2020.",
-        "concept": "Contextual stability in legitimate fallback: >=92% of genuine recovery occurs on primary known device and subnet."
+        "citation": "Wiefling, Lo Iacono, and Dürmuth, 'More Than Just Good Passwords? A Study on Usability and Security Perceptions of Risk-Based Authentication', ACSAC, 2020.",
+        "concept": "Contextual continuity in risk-based authentication (same primary device and network signals during legitimate fallback)."
     },
     {
-        "citation": "Kent, A. D., 'Comprehensive, Multi-Source Cyber-Security Events', Los Alamos National Laboratory (LANL), 2016.",
-        "concept": "Enterprise authentication log distributions and baseline normal vs anomaly ratios."
+        "citation": "Kent, A. D., 'Comprehensive, Multi-Source Cyber-Security Events', Los Alamos National Laboratory (LANL), 2015/2016.",
+        "concept": "Enterprise multi-source authentication event schema and synthetic baseline/anomaly cohort modeling."
     },
     {
-        "citation": "Bonneau et al., 'The Quest to Replace Passwords: A Framework for Comparative Evaluation', IEEE S&P, 2012.",
-        "concept": "Assurance level ordering and credential recovery security boundaries."
+        "citation": "Bonneau, Herley, van Oorschot, and Stajano, 'The Quest to Replace Passwords: A Framework for Comparative Evaluation', IEEE S&P, 2012.",
+        "concept": "Comparative assurance hierarchies and fallback credential boundaries."
     },
     {
-        "citation": "Alaca & van Oorschot, 'Device Fingerprinting for Augmenting Web and Mobile Authentication: A Survey', ACM Computing Surveys (CSUR), 2016.",
+        "citation": "Alaca and van Oorschot, 'Device Fingerprinting for Augmenting Web Authentication: Classification and Analysis of Methods', ACSAC, 2016.",
         "concept": "Hardware continuity verification and device fingerprint stability."
     },
     {
-        "citation": "Freeman et al., 'Who Are You? A Statistical Approach to Measuring User Authenticity', USENIX Security Symposium, 2016.",
-        "concept": "Contextual anomalies, velocity thresholds, and environmental baseline modeling."
+        "citation": "Freeman, Jain, Dürmuth, Biggio, and Giacinto, 'Who Are You? A Statistical Approach to Measuring User Authenticity', NDSS, 2016.",
+        "concept": "Contextual anomalies, geolocation velocity shifts, and risk-based baseline modeling."
     },
     {
-        "citation": "Thomas et al., 'Investigating Account Takeover at Scale', IEEE Symposium on Security and Privacy (S&P), 2019.",
-        "concept": "Proxy network routing, VPN IP hops, and credential stuffing after authentication fallback."
+        "citation": "Doerfler, Marincenko, Ranieri, Jiang, Moscicki, McCoy, and Thomas, 'Evaluating Login Challenges as a Defense Against Account Takeover', The Web Conference (WWW), 2019.",
+        "concept": "Targeted account hijacking challenges and malicious network activity after authentication fallback."
     }
 ]
 
@@ -652,19 +649,16 @@ def generate_research_synthetic_dataset() -> Dict[str, Any]:
             "research_reference": "AbuseIPDB malicious IP reputation correlation (Thomas et al. 2019)"
         }
 
+    # Calculate dataset distribution dynamically from generated ground_truth records
+    computed_distribution = dict(Counter(gt["category"] for gt in ground_truth.values()))
+
     dataset = {
         "metadata": {
             "dataset_name": "AuthDrift Empirical Research Synthetic Benchmark",
             "version": "2.0.0",
             "total_journeys": len(ground_truth),
             "total_raw_events": len(raw_events),
-            "distribution": {
-                "ROUTINE_NORMAL": 60,
-                "BENIGN_RECOVERY": 25,
-                "ADVERSARIAL_DRIFT": 25,
-                "CONTEXTUAL_ANOMALY": 20,
-                "THREAT_INTEL_ATTACK": 15
-            },
+            "distribution": computed_distribution,
             "research_papers": RESEARCH_PAPERS
         },
         "ground_truth": ground_truth,
