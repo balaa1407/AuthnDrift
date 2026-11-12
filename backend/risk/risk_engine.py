@@ -32,6 +32,20 @@ class RiskEngine:
     def __init__(self, config: Optional[RiskEngineConfig] = None):
         self.config = config or RiskEngineConfig()
 
+    @staticmethod
+    def _has_independent_contradiction(context_evidence: ContextEvidence) -> bool:
+        """Returns True if severe or contradictory signals bar benign recovery suppression."""
+        ip_rep = getattr(context_evidence, "ip_reputation", None)
+        if context_evidence.authenticator_registered is True:
+            return True
+        if context_evidence.is_new_device is True or context_evidence.is_location_changed is True:
+            return True
+        if context_evidence.prior_failures_count >= 2:
+            return True
+        if ip_rep is not None and ip_rep.status in ("KNOWN_MALICIOUS", "SUSPICIOUS"):
+            return True
+        return any(getattr(a, "is_impossible_travel", False) for a in context_evidence.context_anomalies)
+
     def evaluate_risk(
         self,
         drift_result: DriftResult,
@@ -40,7 +54,10 @@ class RiskEngine:
         score = 0
         triggered_factors: List[str] = []
         breakdown: Dict[str, int] = {}
-        is_recovery = getattr(context_evidence, "is_recovery_candidate", False)
+        is_recovery = (
+            getattr(context_evidence, "is_recovery_candidate", False)
+            and not self._has_independent_contradiction(context_evidence)
+        )
 
         # Factor 1: Assurance Downgrade
         # Bypassed if journey is classified as a legitimate recovery candidate on verified known device & same IP

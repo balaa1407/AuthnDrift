@@ -156,7 +156,7 @@ All generated alerts include an explicit caveat:
 
 ## 7. Verification Methodology & Test Coverage
 
-The test suite consists of **64 automated pytest cases** covering unit behavior, regression edge cases, and 10 controlled scenarios:
+The automated pytest suite covers unit behavior, regression edge cases, state-machine invariants, threat intelligence, synthetic dataset validation, and controlled scenarios (TC01–TC11):
 
 - **TC01**: Known-device passkey success (Score 0, LOW severity, no drift).
 - **TC02**: Failed passkey followed by password fallback (HIGH $\to$ LOW drift detected).
@@ -175,5 +175,7 @@ The test suite consists of **64 automated pytest cases** covering unit behavior,
 ## 8. Known Limitations & Prototype Boundaries
 
 1. **Controlled Environment Scope**: The prototype relies on normalized event streams conforming to the common `AuthenticationEvent` schema. It does not perform active network packet sniffing or in-line proxying.
-2. **Stateless Journey Scope**: Journeys are evaluated within bounded batches or sessions. Long-term longitudinal behavioral baselining across months is handled via the baseline set inputs (`known_devices`, `known_locations`).
-3. **Heuristic Risk Calibration**: Risk scores reflect transparent, expert-configured heuristic weights rather than machine learning models or statistical probability distributions.
+2. **In-Memory Baselines (No Persistent Database)**: Per-user device, IP, and `LocationProfiler` baselines live strictly in process memory for the lifetime of an `AuthDriftPipeline` or `AuthDriftEngine` instance (and API server process). They are cleared on restart and do not persist across container restarts unless re-ingested or configured externally.
+3. **VPN / Proxy Telemetry Limitation (`NOT_VERIFIED`)**: AuthDrift never infers VPN or proxy usage solely from an IP address change. Without a dedicated network-anonymizer telemetry source, `vpn_proxy_status` remains `NOT_VERIFIED`.
+4. **Heuristic Risk Scoring**: Risk scores reflect transparent, expert-configured heuristic weights rather than machine learning models or statistical probability distributions.
+5. **No LLM Integration**: All detection, case classification (Cases 1–5), correlation, and scoring execute deterministically without external LLM APIs.

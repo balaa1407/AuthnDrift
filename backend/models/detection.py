@@ -96,6 +96,7 @@ class ContextEvidence:
     evidence_notes: List[str] = field(default_factory=list)
     context_anomalies: List[ContextAnomaly] = field(default_factory=list)
     ip_reputation: Optional[IPReputationResult] = None
+    vpn_proxy_status: str = "NOT_VERIFIED"  # No reliable VPN/proxy telemetry integrated
 
 
 @dataclass
@@ -141,3 +142,4 @@ class SecurityAlert:
     ip_reputation: Optional[IPReputationResult] = None
     actionable_remediation: List[str] = field(default_factory=list)
     cryptographic_boundary: Optional[str] = None
+    vpn_proxy_status: str = "NOT_VERIFIED"

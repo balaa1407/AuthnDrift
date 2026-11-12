@@ -6,7 +6,7 @@ derived deterministically from historical successful authentications.
 
 from collections import Counter
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple
 from backend.models.event import AuthenticationEvent
@@ -79,7 +79,11 @@ class LocationProfiler:
             if not loc:
                 continue
 
-            ts = event.timestamp if event.timestamp else datetime.min
+            ts = event.timestamp if event.timestamp else datetime.min.replace(tzinfo=timezone.utc)
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            else:
+                ts = ts.astimezone(timezone.utc)
             if event.user_id not in user_successful_locations:
                 user_successful_locations[event.user_id] = []
             user_successful_locations[event.user_id].append((ts, loc))
@@ -144,13 +148,14 @@ class LocationProfiler:
         contaminate its own historical baseline, and that other users' events are ignored.
         """
         excluded = exclude_event_ids or set()
-        history = [
-            e for e in events
-            if e.user_id == user_id
-            and e.timestamp is not None
-            and e.timestamp < before
-            and e.event_id not in excluded
-        ]
+        before_utc = before.replace(tzinfo=timezone.utc) if before.tzinfo is None else before.astimezone(timezone.utc)
+        history = []
+        for e in events:
+            if e.user_id != user_id or e.timestamp is None or e.event_id in excluded:
+                continue
+            ev_ts = e.timestamp.replace(tzinfo=timezone.utc) if e.timestamp.tzinfo is None else e.timestamp.astimezone(timezone.utc)
+            if ev_ts < before_utc:
+                history.append(e)
         snapshot = LocationProfiler(
             min_successful_observations=self.min_successful_observations,
             lookback_limit=self.lookback_limit

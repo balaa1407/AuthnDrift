@@ -63,8 +63,20 @@ class AlertGenerator:
             if e.outcome and str(e.outcome).strip().upper() in ["FAILURE", "FAILED", "ERROR"]
         ]
 
-        # Classify alert type
-        is_recovery = getattr(context_evidence, "is_recovery_candidate", False)
+        # Classify alert type: recovery suppression never masks independent severe signals
+        has_independent_threat = (
+            context_evidence.authenticator_registered is True
+            or context_evidence.is_new_device is True
+            or context_evidence.is_location_changed is True
+            or context_evidence.prior_failures_count >= 2
+            or any(getattr(a, "is_impossible_travel", False) for a in context_evidence.context_anomalies)
+            or (
+                getattr(context_evidence, "ip_reputation", None) is not None
+                and context_evidence.ip_reputation.status in ("KNOWN_MALICIOUS", "SUSPICIOUS")
+            )
+            or risk_assessment.score > 0
+        )
+        is_recovery = bool(getattr(context_evidence, "is_recovery_candidate", False)) and not has_independent_threat
 
         has_context_anomaly = (
             bool(context_evidence.context_anomalies)
@@ -262,5 +274,6 @@ class AlertGenerator:
             failed_authentications=failed_authentications,
             ip_reputation=getattr(context_evidence, "ip_reputation", None),
             actionable_remediation=actionable_remediation,
-            cryptographic_boundary=cryptographic_boundary
+            cryptographic_boundary=cryptographic_boundary,
+            vpn_proxy_status=getattr(context_evidence, "vpn_proxy_status", "NOT_VERIFIED"),
         )

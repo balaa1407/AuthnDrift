@@ -7,7 +7,7 @@ between sequential authentication events to detect physically impossible transit
 """
 
 import math
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 
 
@@ -106,8 +106,10 @@ def evaluate_travel_velocity(
     if not coords1 or not coords2:
         return None
 
+    t1 = source_time.replace(tzinfo=timezone.utc) if source_time.tzinfo is None else source_time.astimezone(timezone.utc)
+    t2 = target_time.replace(tzinfo=timezone.utc) if target_time.tzinfo is None else target_time.astimezone(timezone.utc)
     distance_km = calculate_haversine_distance(coords1, coords2)
-    time_delta_seconds = abs((target_time - source_time).total_seconds())
+    time_delta_seconds = abs((t2 - t1).total_seconds())
 
     # Avoid division by zero
     if time_delta_seconds < 1.0:
